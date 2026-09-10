@@ -108,6 +108,11 @@ class ActionType(Base):
 
     created_at = Column(DateTime, default=utcnow, nullable=False)
 
+    @property
+    def params_schema(self) -> dict:
+        """params_schema_json 的读别名（Response DTO 用）"""
+        return self.params_schema_json or {}
+
 
 class ActionExec(Base):
     """动作执行记录（staged writes 状态机载体）
@@ -138,3 +143,13 @@ class ActionExec(Base):
 
     # 执行日志：{"before": {...原值快照}, "transform_log": [...], "errors": [...]}
     exec_log_json = Column(JSON, nullable=True)
+
+    @property
+    def params(self) -> dict:
+        """params_json 的读别名（Response DTO 用）"""
+        return self.params_json or {}
+
+    @property
+    def exec_log(self) -> dict:
+        """exec_log_json 的读别名（Response DTO 用）"""
+        return self.exec_log_json or {}

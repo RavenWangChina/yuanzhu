@@ -6,6 +6,9 @@ from fastapi import FastAPI
 from yuanzhu.config import settings
 from yuanzhu.db.database import init_db
 from yuanzhu.mcp.server import router as mcp_router
+from yuanzhu.api.objects import router as objects_router
+from yuanzhu.api.actions import router as actions_router
+from yuanzhu.api.staged import router as staged_router
 
 
 @asynccontextmanager
@@ -22,6 +25,9 @@ app = FastAPI(
 )
 
 app.include_router(mcp_router)
+app.include_router(objects_router)
+app.include_router(actions_router)
+app.include_router(staged_router)
 
 
 @app.get("/health")
