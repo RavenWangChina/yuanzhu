@@ -1,0 +1,21 @@
+# 创建行动项（AI 提炼产物进待审中心，人审后入库）
+name: CreateActionItem
+description_for_agent: 创建一条行动项（进入待审中心等人确认）
+autonomy_level: 2
+requires_staging: true
+idempotency_key_template: "ai-{title}"
+params:
+  type: object
+  properties:
+    title: {type: string}
+    owner: {type: string}
+    due: {type: string}
+  required: [title]
+transform:
+  - create_object:
+      type: ActionItem
+    with:
+      title: from:params.title
+      owner: from:params.owner
+      due: from:params.due
+      status: literal:Open

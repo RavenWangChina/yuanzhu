@@ -1,0 +1,4 @@
+name: meeting
+version: 0.1.0
+domain: meeting
+description: 会议追踪——登记会议、AI 提炼行动项、人审后入库（模板开发指南的实测示例）

@@ -1,0 +1,13 @@
+name: add-task
+description: 添加任务（人审）
+params_schema:
+- name: title
+  label: 任务标题
+  type: string
+  required: true
+steps:
+- id: submit
+  type: action_step
+  action: CreateTask
+  params:
+    title: $params.title

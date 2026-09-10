@@ -22,7 +22,7 @@ from yuanzhu.config import settings
 async def make_client():
     """默认连本机中控（YUANZHU_BASE_URL 可覆盖；配了 api_token 自动携带）"""
     headers = {"Authorization": f"Bearer {settings.api_token}"} if settings.api_token else {}
-    async with httpx.AsyncClient(base_url=settings.base_url, timeout=30, headers=headers) as client:
+    async with httpx.AsyncClient(base_url=settings.base_url, timeout=120, headers=headers) as client:  # forge 类长操作
         yield client
 
 
@@ -175,6 +175,21 @@ async def cmd_run(client, args, ctx):
         ctx.print("  → yuanzhu pending 查看 / yuanzhu approve <id> 审批")
 
 
+async def cmd_forge(client, args, ctx):
+    resp = await _post(client, "/api/templates/forge",
+                       {"description": args.description}, ctx)
+    if ctx.exit_code:
+        return
+    d = resp.json()
+    badge = "✅ 已上架" if d["status"] == "published" else "⚠ evals 未全过，留在草稿区"
+    ctx.print(f"{badge}: {d['name']}")
+    ctx.print(f"  evals: {d['evals']['passed']}/{d['evals']['total']} 通过"
+              + (f"，失败: {', '.join(d['evals']['failures'])}" if d['evals']['failures'] else ""))
+    ctx.print(f"  目录: {d['directory']}（可人工微调后重新注册）")
+    if d["status"] == "published":
+        ctx.print("  → 模板市场立即可用；yuanzhu mcp tools 查看 agent 新能力")
+
+
 async def cmd_import(client, args, ctx):
     from pathlib import Path as _P
     path = _P(args.file)
@@ -240,6 +255,9 @@ def build_parser() -> argparse.ArgumentParser:
     run.add_argument("workflow")
     run.add_argument("--param", nargs="*", default=[], metavar="k=v", help="工作流参数")
 
+    fg = sub.add_parser("forge", help="一句话铸模板（AI 生成四段式，evals 守门）")
+    fg.add_argument("description", help="描述你的工作场景，如：我每天要收集各组周报汇总成一份")
+
     imp = sub.add_parser("import", help="导入聊天记录文件（企微/微信导出 txt）")
     imp.add_argument("file", help="聊天记录文本文件路径")
     imp.add_argument("--group", default="导入会话", help="群/会话名")
@@ -255,7 +273,7 @@ def build_parser() -> argparse.ArgumentParser:
 HANDLERS = {
     "status": cmd_status, "query": cmd_query, "pending": cmd_pending,
     "approve": cmd_approve, "reject": cmd_reject, "templates": cmd_templates,
-    "run": cmd_run, "mcp": cmd_mcp_tools, "import": cmd_import,
+    "run": cmd_run, "mcp": cmd_mcp_tools, "import": cmd_import, "forge": cmd_forge,
 }
 
 

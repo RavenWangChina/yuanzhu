@@ -1,0 +1,14 @@
+cases:
+- name: 建任务-人审入库
+  steps:
+  - action: CreateTask
+    params:
+      title: eval-t1
+    expect:
+      status: staged
+  - approve: {}
+  expect:
+    status: applied
+    object_exists:
+      type: Task
+      title: eval-t1

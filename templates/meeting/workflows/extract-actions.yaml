@@ -1,0 +1,30 @@
+# 从会议记录提炼行动项：AI 起草，人审后入库
+name: extract-actions
+description: 从会议记录提炼行动项（AI 起草，人审后入库）
+params_schema:
+  - name: raw_notes
+    label: 会议记录
+    type: text
+    required: true
+    placeholder: 粘贴会议记录，例如：小李周三前补齐接口文档；小王下周五演示原型……
+steps:
+  - id: extract
+    type: ai_step
+    prompt_prefix: |
+      你是会议助理。从会议记录中提取所有行动项。
+      严格按 JSON 数组输出，每项 {"title": "...", "owner": "...", "due": "..."}。
+      owner 是负责人（没有就填空字符串），due 是截止时间（原文怎么说就怎么填，没有填空字符串）。
+      没有行动项就输出 []。不要输出任何其他文字。
+    prompt_var: raw_notes
+    model: glm-5.1
+    output: candidates
+    expect_json: true
+
+  - id: submit
+    type: action_step
+    action: CreateActionItem
+    iterate_over: candidates
+    params:
+      title: $item.title
+      owner: $item.owner
+      due: $item.due

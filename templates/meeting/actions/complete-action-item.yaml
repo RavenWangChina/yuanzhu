@@ -1,0 +1,17 @@
+# 完成行动项（演示 set 规则 + 运行时校验：只有 Open 的能完成）
+name: CompleteActionItem
+description_for_agent: 把行动项标记为完成（仅 Open 状态可操作）
+autonomy_level: 2
+requires_staging: true
+idempotency_key_template: "done-{object_id}"
+params:
+  type: object
+  properties:
+    object_id: {type: integer}
+  required: [object_id]
+submission_criteria:
+  object_ref: params.object_id
+  check: {properties.status: Open}
+transform:
+  - set: properties.status
+    value: Done

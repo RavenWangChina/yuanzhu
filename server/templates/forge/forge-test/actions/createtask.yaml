@@ -1,0 +1,17 @@
+name: CreateTask
+description_for_agent: 创建任务（进待审）
+autonomy_level: 2
+requires_staging: true
+params:
+  type: object
+  properties:
+    title:
+      type: string
+  required:
+  - title
+transform:
+- create_object:
+    type: Task
+  with:
+    title: from:params.title
+    status: literal:Open

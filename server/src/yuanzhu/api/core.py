@@ -108,6 +108,22 @@ async def register_template(body: TemplateRegisterRequest, db: AsyncSession = De
         raise HTTPException(status_code=400, detail=str(e))
 
 
+class ForgeRequest(BaseModel):
+    description: str
+
+
+@router.post("/templates/forge")
+async def forge_template_endpoint(body: ForgeRequest, db: AsyncSession = Depends(get_db)):
+    """一句话铸模板：AI 生成四段式 → evals 守门 → 全过自动上架"""
+    if len(body.description.strip()) < 6:
+        raise HTTPException(status_code=400, detail="描述太短，说说你要处理的日常工作（谁/做什么/产出什么）")
+    from yuanzhu.template.forge import forge_template
+    try:
+        return await forge_template(db, body.description.strip())
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
 @router.get("/templates")
 async def list_templates(domain: Optional[str] = None, status: Optional[str] = None,
                          db: AsyncSession = Depends(get_db)):

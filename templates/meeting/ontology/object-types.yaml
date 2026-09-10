@@ -1,0 +1,21 @@
+# 会议域对象模型（四段式之①）
+types:
+  - name: Meeting
+    title_key: title
+    description: 会议
+    exposed: true
+    properties:
+      title: {type: string, required: true}
+      date: {type: string}
+      attendees: {type: string}
+      raw_notes: {type: string}
+
+  - name: ActionItem
+    title_key: title
+    description: 行动项
+    exposed: true
+    properties:
+      title: {type: string, required: true}
+      owner: {type: string}
+      due: {type: string}
+      status: {type: string, enum: [Open, Done], default: Open}

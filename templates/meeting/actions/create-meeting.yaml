@@ -1,0 +1,22 @@
+# 登记会议（低风险登记类：L1 自动执行，演示两种自主性）
+name: CreateMeeting
+description_for_agent: 登记一条会议记录（自动生效，不进待审）
+autonomy_level: 1
+requires_staging: false
+idempotency_key_template: "meeting-{title}"
+params:
+  type: object
+  properties:
+    title: {type: string}
+    date: {type: string}
+    attendees: {type: string}
+    raw_notes: {type: string}
+  required: [title]
+transform:
+  - create_object:
+      type: Meeting
+    with:
+      title: from:params.title
+      date: from:params.date
+      attendees: from:params.attendees
+      raw_notes: from:params.raw_notes

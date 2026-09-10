@@ -3,6 +3,23 @@
     <h1 class="page-title">模板市场</h1>
     <p class="page-desc">已安装的工作流模板——点「使用」即可运行，产出进入待审中心等你确认</p>
 
+    <!-- 一句话铸造（冷启动：没有想要的模板？说人话直接铸一个） -->
+    <div class="card forge-card">
+      <div style="display:flex; gap:10px; align-items:center">
+        <input v-model="forgeDesc" class="comment" style="flex:1"
+               placeholder="描述你的日常工作，AI 直接铸成模板。例如：我每天要收集各组的工作进展，汇总成一份日报"
+               @keyup.enter="doForge" />
+        <button class="btn primary" :disabled="forging" @click="doForge">
+          {{ forging ? '铸造中…' : '铸造模板' }}
+        </button>
+      </div>
+      <div v-if="forgeResult" class="forge-result" :class="{ ok: forgeResult.status === 'published' }">
+        {{ forgeResult.status === 'published'
+            ? `✅ 已上架「${forgeResult.name}」——下方立即可用，评测 ${forgeResult.evals.passed}/${forgeResult.evals.total} 通过`
+            : `⚠ 铸成「${forgeResult.name}」但评测未全过（${forgeResult.evals.failures.join('、')}），已留在草稿区` }}
+      </div>
+    </div>
+
     <div v-if="loading" class="empty">加载中…</div>
     <div v-else-if="loadError" class="empty card" style="color:var(--danger)">{{ loadError }}</div>
     <div v-else-if="templates.length === 0" class="empty card">
@@ -149,6 +166,24 @@ async function submitRun() {
 }
 
 const loadError = ref('')
+const forgeDesc = ref('')
+const forging = ref(false)
+const forgeResult = ref<any>(null)
+
+async function doForge() {
+  if (!forgeDesc.value.trim() || forging.value) return
+  forging.value = true
+  forgeResult.value = null
+  try {
+    forgeResult.value = await api.post('/api/templates/forge', { description: forgeDesc.value.trim() })
+    forgeDesc.value = ''
+    templates.value = await api.get('/api/templates')  // 刷新列表
+  } catch (e) {
+    showToast(String(e).replace('Error: ', ''), true)
+  } finally {
+    forging.value = false
+  }
+}
 onMounted(async () => {
   try {
     templates.value = await api.get('/api/templates')
@@ -166,6 +201,9 @@ onMounted(async () => {
   display: flex; z-index: 50;
 }
 .modal { box-shadow: 0 8px 30px rgba(0,0,0,.15); }
+.forge-card { border-left: 3px solid var(--primary); }
+.forge-result { margin-top: 10px; font-size: 13px; color: #ff8800; }
+.forge-result.ok { color: var(--success); }
 .error-box {
   background: #feecec; color: var(--danger);
   border-radius: 8px; padding: 10px 14px;

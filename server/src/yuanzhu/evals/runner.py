@@ -31,14 +31,15 @@ class EvalsRunner:
         self.object_store = ObjectStore(session)
         self.sm = StagedStateMachine(session)
 
-    async def run_template(self, domain: str) -> Dict[str, Any]:
-        """跑某域全部 published 模板的评测用例，返回报告"""
+    async def run_template(self, domain: str, status: str = "published") -> Dict[str, Any]:
+        """跑某域模板的评测用例（status 可选 draft——forge 守门场景）"""
         result = await self.session.execute(
-            select(Template).where(Template.domain == domain, Template.status == "published")
+            select(Template).where(Template.domain == domain, Template.status == status)
         )
         cases: List[Dict[str, Any]] = []
         for tpl in result.scalars().all():
             for case in tpl.evals_json or []:
+                case["_domain"] = domain   # 跨域：动作按所属域解析
                 cases.append(case)
 
         results = []
@@ -109,9 +110,12 @@ class EvalsRunner:
                 # approve 后 created_object_ids 才落 exec_log——此处补注册
                 self._register_created(last_action_name, applied, context)
 
-        return await self._assert_expect(case.get("expect") or {}, last_result, last_error, context)
+        return await self._assert_expect(
+            case.get("expect") or {}, last_result, last_error, context,
+            current_domain=case.get("_domain", "aiqa"))
 
-    async def _assert_expect(self, expect: Dict[str, Any], last_result, last_error, context):
+    async def _assert_expect(self, expect: Dict[str, Any], last_result, last_error, context,
+                             current_domain: str = "aiqa"):
         if "error_contains" in expect:
             if expect["error_contains"] not in last_error:
                 return False, f"期望报错含 {expect['error_contains']!r}，实际: {last_error!r}"
@@ -122,7 +126,8 @@ class EvalsRunner:
                 return False, f"终态 {last_result.get('status')} ≠ 期望 {expect['status']}"
 
         if "object_exists" in expect:
-            found = await self._object_exists(expect["object_exists"])
+            found = await self._object_exists(
+                expect["object_exists"], domain=current_domain)
             if not found:
                 return False, f"对象未入库: {expect['object_exists']}"
         return True, "通过"
@@ -151,8 +156,8 @@ class EvalsRunner:
                     context["$last_" + lower[len(prefix):]] = ids[0]
                 break
 
-    async def _object_exists(self, spec: Dict[str, Any]) -> bool:
-        obj_type = await self.object_store.get_type_by_name("aiqa", spec["type"])
+    async def _object_exists(self, spec: Dict[str, Any], domain: str = "aiqa") -> bool:
+        obj_type = await self.object_store.get_type_by_name(domain, spec["type"])
         if not obj_type:
             return False
         objects = await self.object_store.list_objects(type_id=obj_type.id, limit=200)

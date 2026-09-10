@@ -1,0 +1,30 @@
+# 会议域评测用例（四段式之④）
+cases:
+  - name: 建会议-自动生效
+    steps:
+      - action: CreateMeeting
+        params: {title: eval-周会, date: "2026-09-10", attendees: 小李/小王}
+    expect:
+      status: applied
+      object_exists: {type: Meeting, title: eval-周会}
+
+  - name: 建行动项-人审后入库
+    steps:
+      - action: CreateActionItem
+        params: {title: eval-补齐文档, owner: 小李, due: 周三}
+        expect: {status: staged}
+      - approve: {}
+    expect:
+      status: applied
+      object_exists: {type: ActionItem, title: eval-补齐文档}
+
+  - name: 完成行动项-语义拦截
+    steps:
+      - action: CompleteActionItem
+        params: {object_id: $last_actionitem}
+        expect: {status: staged}
+      - approve: {}
+      - action: CompleteActionItem
+        params: {object_id: $last_actionitem}
+    expect:
+      error_contains: submission_criteria

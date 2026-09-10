@@ -1,0 +1,14 @@
+types:
+- name: Task
+  title_key: title
+  exposed: true
+  properties:
+    title:
+      type: string
+      required: true
+    status:
+      type: string
+      enum:
+      - Open
+      - Done
+      default: Open
