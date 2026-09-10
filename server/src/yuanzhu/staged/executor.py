@@ -41,13 +41,13 @@ class ActionExecutor:
                 created_ids.append(obj.id)
                 transform_log.append({"created_object": obj.id, "type": rule["create_object"].get("type")})
             elif "set" in rule and object_id is not None:
-                if "before" not in log:
-                    obj = await self.object_store.get_object(int(object_id))
-                    if not obj:
-                        raise ValueError(f"目标对象不存在: {object_id}")
-                    log["before"] = copy.deepcopy(obj.properties_json or {})
-                new_props = apply_transform([rule], params, log["before"])
                 obj = await self.object_store.get_object(int(object_id))
+                if not obj:
+                    raise ValueError(f"目标对象不存在: {object_id}")
+                if "before" not in log:
+                    log["before"] = copy.deepcopy(obj.properties_json or {})
+                # 累积应用：基于对象当前属性（多条 set 不互相覆盖）
+                new_props = apply_transform([rule], params, obj.properties_json or {})
                 obj.properties_json = new_props
                 await self.session.flush()
                 transform_log.append({"set": rule.get("set")})

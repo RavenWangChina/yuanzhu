@@ -54,9 +54,17 @@ def apply_transform(
         if "from" in rule:
             source_path = rule["from"]
             if source_path.startswith("params."):
-                value = _dig(params, source_path[len("params."):])
-            else:
-                value = _dig(params, source_path)  # 兼容直接 params 引用
+                source_path = source_path[len("params."):]
+            # 可选参数缺失 → 跳过该 set（params_schema 的 required 才是必填裁决）
+            node: Any = params
+            for part in source_path.split("."):
+                if not isinstance(node, dict) or part not in node:
+                    node = None
+                    break
+                node = node[part]
+            if node is None:
+                continue
+            value = node
         elif "value" in rule:
             value = rule["value"]
         else:
