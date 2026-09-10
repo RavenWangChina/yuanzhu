@@ -71,11 +71,20 @@ def apply_transform(
 
 
 def resolve_with_value(spec: str, params: Dict[str, Any]) -> Any:
-    """create_object 的 with 值解析：from:params.x / literal:v / 裸值"""
+    """create_object 的 with 值解析：from:params.x / literal:v / 裸值
+
+    from 引用的可选参数缺失时返回 None（属性留空），不炸——
+    params_schema 的 required 才是必填的裁决点。
+    """
     if not isinstance(spec, str):
         return spec
     if spec.startswith("from:params."):
-        return _dig(params, spec[len("from:params."):])
+        node: Any = params
+        for part in spec[len("from:params."):].split("."):
+            if not isinstance(node, dict):
+                return None
+            node = node.get(part)
+        return node
     if spec.startswith("literal:"):
         return spec[len("literal:"):]
     return spec

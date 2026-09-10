@@ -76,7 +76,9 @@ class ActionExecutor:
 
         properties = {}
         for key, spec in (rule.get("with") or {}).items():
-            properties[key] = resolve_with_value(spec, params)
+            value = resolve_with_value(spec, params)
+            if value is not None:  # 可选参数缺失 → 属性缺省（非 None，免 schema 拒）
+                properties[key] = value
 
         return await self.object_store.create_object(ObjectCreate(
             type_id=obj_type.id,
