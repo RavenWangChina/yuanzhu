@@ -1,0 +1,25 @@
+# 测试报告工作流：汇总模块缺陷与用例执行情况 → AI 总结 → 人审发布
+name: test-report
+description: 生成模块测试报告（AI 起草，人审后作为 Report 对象入库）
+steps:
+  - id: gather
+    type: query_step
+    object_type: Bug
+    filter: {status: Open}
+    output: open_bugs
+
+  - id: summarize
+    type: ai_step
+    prompt_prefix: |
+      你是 QA 负责人。基于以下未解决缺陷清单，写一份简明的测试状态报告：
+      总体风险评级、Top 风险项、建议动作。300 字以内，中文。
+    prompt_var: open_bugs
+    model: deepseek-chat
+    output: report_content
+
+  - id: publish
+    type: action_step
+    action: CreateReport
+    params:
+      title: $params.report_title
+      content: $report_content

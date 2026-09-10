@@ -1,0 +1,23 @@
+# 解决缺陷（改状态 + 记解决人；语义校验：只有 Open 的 Bug 可解决）
+name: ResolveBug
+description_for_agent: 把缺陷标记为已解决（仅 Open 状态可操作）
+autonomy_level: 2
+requires_staging: true
+idempotency_key_template: "resolve-{object_id}"
+params:
+  type: object
+  properties:
+    object_id: {type: integer}
+    resolved_by: {type: string}
+    resolution: {type: string}
+  required: [object_id]
+submission_criteria:
+  object_ref: params.object_id
+  check: {properties.status: Open}
+transform:
+  - set: properties.status
+    value: Resolved
+  - set: properties.resolution
+    from: params.resolution
+  - set: properties.resolved_by
+    from: params.resolved_by

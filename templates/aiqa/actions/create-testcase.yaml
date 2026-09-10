@@ -1,0 +1,24 @@
+# 创建测试用例（双用例设计的落点，staged 人审）
+name: CreateTestCase
+description_for_agent: 为模块新增测试用例（kind 区分正向/反向用例）
+autonomy_level: 2
+requires_staging: true
+idempotency_key_template: "tc-{name}"
+params:
+  type: object
+  properties:
+    name: {type: string}
+    kind: {type: string, enum: [positive, negative]}
+    module_name: {type: string}
+    steps: {type: string}
+    expected: {type: string}
+  required: [name]
+transform:
+  - create_object:
+      type: TestCase
+    with:
+      name: from:params.name
+      kind: from:params.kind
+      module_name: from:params.module_name
+      steps: from:params.steps
+      expected: from:params.expected

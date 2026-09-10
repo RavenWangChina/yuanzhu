@@ -1,0 +1,21 @@
+# 关联证据到缺陷（staged：证据入链需人确认）
+name: LinkEvidence
+description_for_agent: 给缺陷挂一条证据（截图/日志引用）
+autonomy_level: 2
+requires_staging: true
+idempotency_key_template: "evidence-{name}"
+params:
+  type: object
+  properties:
+    name: {type: string}
+    kind: {type: string, enum: [screenshot, log, report, other]}
+    ref: {type: string}
+    bug_title: {type: string}
+  required: [name, bug_title]
+transform:
+  - create_object:
+      type: Evidence
+    with:
+      name: from:params.name
+      kind: from:params.kind
+      ref: from:params.ref

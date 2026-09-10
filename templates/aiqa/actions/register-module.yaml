@@ -1,0 +1,20 @@
+# 注册被测模块（读友好的登记类动作，L1 自动）
+name: RegisterModule
+description_for_agent: 登记一个被测模块（名称唯一）
+autonomy_level: 1
+requires_staging: false
+idempotency_key_template: "module-{name}"
+params:
+  type: object
+  properties:
+    name: {type: string}
+    description: {type: string}
+    owner: {type: string}
+  required: [name]
+transform:
+  - create_object:
+      type: Module
+    with:
+      name: from:params.name
+      description: from:params.description
+      owner: from:params.owner

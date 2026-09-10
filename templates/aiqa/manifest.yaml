@@ -1,0 +1,9 @@
+name: aiqa
+version: 0.1.0
+domain: aiqa
+description: AIQA 测试知识体系四段式模板（考古/双用例/执行/报告的对象模型与动作库）
+author: MiaoYu
+hardening:
+  evals: true
+  audit: true
+  cost_metering: true

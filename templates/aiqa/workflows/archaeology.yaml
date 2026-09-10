@@ -1,0 +1,35 @@
+# 考古工作流：遗留系统知识逆向 → 双用例设计 → 人审入库
+name: archaeology
+description: 对零文档模块做知识考古，产出测试用例候选（人审后入库）
+steps:
+  - id: analyze
+    type: ai_step
+    prompt_prefix: |
+      你是资深测试架构师。对给定的模块信息做"考古"分析：
+      识别核心功能点、边界条件、历史缺陷高发区。
+      输出要点清单，每行一条。
+    prompt_var: module_brief
+    model: deepseek-chat
+    output: analysis
+
+  - id: design-cases
+    type: ai_step
+    prompt_prefix: |
+      你是测试设计师。基于以下考古分析，设计双用例（每个功能点一条正向 + 一条反向）。
+      严格按 JSON 数组输出，每项 {name, kind, module_name, steps, expected}，
+      kind 只能是 positive 或 negative，不要输出其他文字。
+    prompt_var: analysis
+    model: deepseek-chat
+    output: case_candidates
+    expect_json: true
+
+  - id: submit-cases
+    type: action_step
+    action: CreateTestCase
+    iterate_over: case_candidates
+    params:
+      name: $item.name
+      kind: $item.kind
+      module_name: $item.module_name
+      steps: $item.steps
+      expected: $item.expected

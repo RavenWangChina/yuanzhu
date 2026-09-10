@@ -1,0 +1,33 @@
+# AIQA 模板评测集（四段式之④——模板自带的验收测试，硬化清单 evals 项）
+cases:
+  # L1 自动路径
+  - name: 注册模块-自动生效
+    steps:
+      - action: RegisterModule
+        params: {name: eval-支付模块, owner: eval-runner}
+    expect:
+      status: applied
+      object_exists: {type: Module, name: eval-支付模块}
+
+  # L2 staged 路径：stage → 审批 → 生效
+  - name: 提交缺陷-人审后入库
+    steps:
+      - action: CreateBug
+        params: {title: eval-登录超时, severity: major, module_name: eval-支付模块}
+        expect: {status: staged}
+      - approve: {}
+    expect:
+      status: applied
+      object_exists: {type: Bug, title: eval-登录超时}
+
+  # 语义校验：Resolved 的 Bug 不能再 Resolve
+  - name: 解决缺陷-语义拦截
+    steps:
+      - action: ResolveBug
+        params: {object_id: $last_bug, resolution: 已修复}
+        expect: {status: staged}
+      - approve: {}
+      - action: ResolveBug
+        params: {object_id: $last_bug, resolution: 再修一次}
+    expect:
+      error_contains: submission_criteria

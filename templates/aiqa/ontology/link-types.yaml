@@ -1,0 +1,21 @@
+# AIQA 链接类型（对象间关系）
+types:
+  - name: covers
+    source_type: Report
+    target_type: Module
+    cardinality: many
+
+  - name: contains_testcase
+    source_type: Module
+    target_type: TestCase
+    cardinality: many
+
+  - name: reproduced_by
+    source_type: Bug
+    target_type: TestCase
+    cardinality: many
+
+  - name: has_evidence
+    source_type: Bug
+    target_type: Evidence
+    cardinality: many

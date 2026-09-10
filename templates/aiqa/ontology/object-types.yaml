@@ -1,0 +1,51 @@
+# AIQA 对象模型（四段式之①）
+types:
+  - name: Module
+    title_key: name
+    description: 被测系统模块
+    exposed: true
+    properties:
+      name: {type: string, required: true}
+      description: {type: string}
+      owner: {type: string}
+
+  - name: TestCase
+    title_key: name
+    description: 测试用例（双用例：正向+反向）
+    exposed: true
+    properties:
+      name: {type: string, required: true}
+      kind: {type: string, enum: [positive, negative], default: positive}
+      module_name: {type: string}
+      steps: {type: string}
+      expected: {type: string}
+
+  - name: Bug
+    title_key: title
+    description: 缺陷
+    exposed: true
+    properties:
+      title: {type: string, required: true}
+      status: {type: string, enum: [Open, Resolved, Closed, Rejected], default: Open}
+      severity: {type: string, enum: [blocker, critical, major, minor, trivial], default: minor}
+      module_name: {type: string}
+      reproduce_steps: {type: string}
+
+  - name: Evidence
+    title_key: name
+    description: 测试证据（截图/日志/产物引用）
+    properties:
+      name: {type: string, required: true}
+      kind: {type: string, enum: [screenshot, log, report, other], default: other}
+      ref: {type: string}
+
+  - name: Report
+    title_key: title
+    description: 测试报告
+    exposed: true
+    properties:
+      title: {type: string, required: true}
+      module_name: {type: string}
+      passed: {type: integer}
+      failed: {type: integer}
+      content: {type: string}

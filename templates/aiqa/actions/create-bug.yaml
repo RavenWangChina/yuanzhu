@@ -1,0 +1,23 @@
+# 创建缺陷（AI 产出默认 staged 人审——ADR-006 写低）
+name: CreateBug
+description_for_agent: 提交一个新缺陷（进入待审中心等人确认）
+autonomy_level: 2
+requires_staging: true
+idempotency_key_template: "bug-{title}"
+params:
+  type: object
+  properties:
+    title: {type: string}
+    severity: {type: string, enum: [blocker, critical, major, minor, trivial]}
+    module_name: {type: string}
+    reproduce_steps: {type: string}
+  required: [title]
+transform:
+  - create_object:
+      type: Bug
+    with:
+      title: from:params.title
+      severity: from:params.severity
+      module_name: from:params.module_name
+      reproduce_steps: from:params.reproduce_steps
+      status: literal:Open

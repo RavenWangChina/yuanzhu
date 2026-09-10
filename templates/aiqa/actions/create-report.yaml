@@ -1,0 +1,24 @@
+# 创建测试报告（AI 起草人审发布）
+name: CreateReport
+description_for_agent: 生成测试报告对象（AI 起草的内容进入待审中心）
+autonomy_level: 2
+requires_staging: true
+idempotency_key_template: "report-{title}"
+params:
+  type: object
+  properties:
+    title: {type: string}
+    module_name: {type: string}
+    content: {type: string}
+    passed: {type: integer}
+    failed: {type: integer}
+  required: [title]
+transform:
+  - create_object:
+      type: Report
+    with:
+      title: from:params.title
+      module_name: from:params.module_name
+      content: from:params.content
+      passed: from:params.passed
+      failed: from:params.failed
