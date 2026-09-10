@@ -125,7 +125,8 @@ def parse_action_type_yaml(yaml_content: str) -> Dict[str, Any]:
         raise ValueError("YAML 内容为空")
 
     name = _require(data, "name")
-    domain = _require(data, "domain")
+    # domain 可由调用方注入（模板四段式中动作不带域，manifest 是权威）
+    domain = data.get("domain")
 
     autonomy_level = data.get("autonomy_level", 2)
     if not (1 <= int(autonomy_level) <= 5):

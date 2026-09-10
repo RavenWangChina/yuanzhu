@@ -4,7 +4,7 @@
 Windows Git Bash 的 date 输出是 UTC，但权威时间源以 PowerShell 为准——
 代码内不依赖 shell date，统一用 timezone aware 的 utcnow()。
 """
-from sqlalchemy import Column, Integer, String, Text, Boolean, DateTime, ForeignKey, JSON
+from sqlalchemy import Column, Integer, String, Text, Boolean, DateTime, ForeignKey, JSON, UniqueConstraint
 from sqlalchemy.orm import relationship
 from datetime import datetime, timezone
 
@@ -204,3 +204,29 @@ class Task(Base):
     @property
     def exec_log(self) -> dict:
         return self.exec_log_json or {}
+
+
+class Template(Base):
+    """四段式模板登记（spec 3.2）
+
+    ontology/actions 注册进本体层（不重复存）；此处存 manifest+workflows+evals。
+    unique(name, version) 保证幂等 upsert。
+    """
+    __tablename__ = "template"
+    __table_args__ = (
+        UniqueConstraint("name", "version", name="uq_template_name_version"),
+    )
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    name = Column(String(100), nullable=False, index=True)
+    version = Column(String(50), nullable=False)
+    domain = Column(String(100), nullable=False, index=True)
+
+    manifest_json = Column(JSON, nullable=False, default=dict)
+    workflows_json = Column(JSON, nullable=False, default=list)
+    evals_json = Column(JSON, nullable=False, default=list)
+
+    # draft（对话学习草稿区）| staged（待审上架）| published
+    status = Column(String(50), default="published", nullable=False, index=True)
+    created_at = Column(DateTime, default=utcnow, nullable=False)
+    updated_at = Column(DateTime, default=utcnow, onupdate=utcnow, nullable=False)
