@@ -1,6 +1,6 @@
 # 测试报告工作流：汇总模块缺陷与用例执行情况 → AI 总结 → 人审发布
 name: test-report
-description: 生成模块测试报告（AI 起草，人审后作为 Report 对象入库）
+description: 生成模块测试报告（AI 起草，经你确认后存档）
 params_schema:
   - name: report_title
     label: 报告标题

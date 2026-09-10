@@ -29,7 +29,7 @@
                     border-top:1px dashed var(--border)">
           <div>
             <b>{{ w.name }}</b>
-            <span style="color:var(--muted); margin-left:8px">{{ w.description }}</span>
+            <div style="color:var(--muted); margin-top:2px">{{ w.description }}</div>
           </div>
           <button class="btn primary" @click="openRun(t, w)">使用</button>
         </div>

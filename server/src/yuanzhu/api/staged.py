@@ -34,6 +34,8 @@ async def list_pending(db: AsyncSession = Depends(get_db)):
         items.append({
             "id": exec.id,
             "action": f"{action_type.domain}/{action_type.name}" if action_type else "?",
+            # H2：小白可读的动作说明（来自 description_for_agent）
+            "action_description": (action_type.description_for_agent if action_type else None),
             "params": exec.params_json,
             "staged_by": exec.staged_by,
             "staged_at": exec.staged_at,
