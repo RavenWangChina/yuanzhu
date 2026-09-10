@@ -1,6 +1,6 @@
 """对话学习提炼 job（spec 3.3 + ADR-007 + ADR-008）
 
-流程：取近 N 条消息 → 模型提炼"高频工作模式候选" → 候选落 Template 草稿区（draft）
+流程：取近 N 条消息 → 模型提炼「高频工作模式候选」 → 候选落 Template 草稿区（draft）
 诚实边界：候选 manifest 标注 layer=协同层（H4 边界试验的数据燃料）
 提示词分区（ADR-008）：稳定前缀（提炼规则）+ 可变段（消息样本）
 """
@@ -12,7 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from yuanzhu.db.models import Template
 
 # 稳定前缀：提炼规则（缓存友好，改规则=改前缀=版本升级）
-REFINE_PROMPT_PREFIX = """你是企业工作流分析师。分析以下企业 IM 群的消息样本，提炼"高频工作模式候选"：
+REFINE_PROMPT_PREFIX = """你是企业工作流分析师。分析以下企业 IM 群的消息样本，提炼「高频工作模式候选」：
 - 谁经常要什么（角色-需求对）
 - 什么请求反复出现（≥2 次即算高频）
 - 什么流程被重复描述
@@ -22,7 +22,7 @@ REFINE_PROMPT_PREFIX = """你是企业工作流分析师。分析以下企业 IM
  "trigger": "触发条件", "steps_draft": ["步骤1", "步骤2"],
  "layer": "协同层"}
 
-layer 只能填"协同层"（诚实边界：对话学习预期承载协同层，领域知识走专家线）。
+layer 只能填「协同层」（诚实边界：对话学习预期承载协同层，领域知识走专家线）。
 只输出 JSON 数组，不要其他文字。提炼不出就输出 []。"""
 
 

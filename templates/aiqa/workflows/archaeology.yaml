@@ -11,7 +11,7 @@ steps:
   - id: analyze
     type: ai_step
     prompt_prefix: |
-      你是资深测试架构师。对给定的模块信息做"考古"分析：
+      你是资深测试架构师。对给定的模块信息做「考古」分析：
       识别核心功能点、边界条件、历史缺陷高发区。
       输出要点清单，每行一条。
     prompt_var: module_brief
