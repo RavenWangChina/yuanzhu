@@ -1,6 +1,12 @@
 # 考古工作流：遗留系统知识逆向 → 双用例设计 → 人审入库
 name: archaeology
 description: 对零文档模块做知识考古，产出测试用例候选（人审后入库）
+params_schema:
+  - name: module_brief
+    label: 模块情况描述
+    type: text
+    required: true
+    placeholder: 例如：订单模块，负责下单、库存扣减、退款，无文档，历史缺陷多
 steps:
   - id: analyze
     type: ai_step

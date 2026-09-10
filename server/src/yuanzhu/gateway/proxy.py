@@ -3,9 +3,20 @@ import litellm
 
 from yuanzhu.db.models import ModelUsage
 
+# 裸模型名 → litellm provider 路由（v0.1 按名直路由，ADR-003；
+# 供应商凭据走环境变量：DEEPSEEK_API_KEY 等 litellm 约定）
+LITELLM_MODEL_MAP = {
+    "deepseek-chat": "deepseek/deepseek-chat",
+    "deepseek-reasoner": "deepseek/deepseek-reasoner",
+    "qwen-plus": "dashscope/qwen-plus",
+}
+
 
 async def acompletion(**kwargs):
     """转发到 litellm；失败原样抛出（降级兜底由调用方处理并附上下文）"""
+    model = kwargs.get("model", "")
+    if model in LITELLM_MODEL_MAP:
+        kwargs["model"] = LITELLM_MODEL_MAP[model]
     return await litellm.acompletion(**kwargs)
 
 

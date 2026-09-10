@@ -18,12 +18,18 @@ from yuanzhu.ontology.action_store import ActionStore
 
 
 async def call_model(model: str, prompt: str) -> str:
-    """ai_step 的模型调用（经网关；测试被 monkeypatch 替换）"""
+    """ai_step 的模型调用（经网关；测试被 monkeypatch 替换）
+
+    失败转 ValueError（携带模型名上下文）——不带上下文的兜底=二次浪费（DMLA）。
+    """
     from yuanzhu.gateway.proxy import acompletion
-    response = await acompletion(
-        model=model,
-        messages=[{"role": "user", "content": prompt}],
-    )
+    try:
+        response = await acompletion(
+            model=model,
+            messages=[{"role": "user", "content": prompt}],
+        )
+    except Exception as e:
+        raise ValueError(f"AI 步骤模型调用失败（model={model}）: {e}") from e
     data = response if isinstance(response, dict) else response.model_dump()
     return data["choices"][0]["message"]["content"]
 

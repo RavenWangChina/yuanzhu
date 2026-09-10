@@ -149,3 +149,25 @@ async def usage_summary(
         for u in recent.scalars().all()
     ]
     return {"days": days, "summary": summary, "recent": details}
+
+
+# ---------- 工作流触发（H2：模板市场「使用」按钮的后端） ----------
+
+class WorkflowRunRequest(BaseModel):
+    domain: str
+    workflow: str
+    params: dict = {}
+    run_by: str = "web-user"
+
+
+@router.post("/workflows/run")
+async def run_workflow(req: WorkflowRunRequest, db: AsyncSession = Depends(get_db)):
+    """触发工作流（单机模式进程内执行；ai_step 走网关、action_step 走 staged）"""
+    from yuanzhu.workflow.engine import WorkflowEngine
+    try:
+        return await WorkflowEngine(db).run(
+            domain=req.domain, workflow_name=req.workflow,
+            params=req.params, run_by=req.run_by,
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
