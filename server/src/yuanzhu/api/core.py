@@ -103,3 +103,49 @@ async def register_template(body: TemplateRegisterRequest, db: AsyncSession = De
 async def list_templates(domain: Optional[str] = None, status: Optional[str] = None,
                          db: AsyncSession = Depends(get_db)):
     return await TemplateStore(db).list(domain=domain, status=status)
+
+
+# ---------- 用量与审计 ----------
+
+@router.get("/usage")
+async def usage_summary(
+    days: int = 7,
+    db: AsyncSession = Depends(get_db),
+):
+    """模型用量汇总（按模型分组：调用数/token/估费）+ 最近明细"""
+    from datetime import timedelta
+    from sqlalchemy import func as sa_func, select as sa_select
+    from yuanzhu.db.models import ModelUsage, utcnow
+
+    cutoff = utcnow() - timedelta(days=days)
+    grouped = await db.execute(
+        sa_select(
+            ModelUsage.model,
+            sa_func.count(ModelUsage.id),
+            sa_func.sum(ModelUsage.prompt_tokens),
+            sa_func.sum(ModelUsage.completion_tokens),
+            sa_func.sum(ModelUsage.estimated_cost),
+        ).where(ModelUsage.created_at >= cutoff).group_by(ModelUsage.model)
+    )
+    summary = [
+        {
+            "model": row[0], "calls": row[1],
+            "prompt_tokens": row[2] or 0, "completion_tokens": row[3] or 0,
+            "estimated_cost": row[4] or 0.0,
+        }
+        for row in grouped.all()
+    ]
+
+    recent = await db.execute(
+        sa_select(ModelUsage).where(ModelUsage.created_at >= cutoff)
+        .order_by(ModelUsage.created_at.desc()).limit(50)
+    )
+    details = [
+        {
+            "id": u.id, "model": u.model, "task_id": u.task_id, "caller": u.caller,
+            "prompt_tokens": u.prompt_tokens, "completion_tokens": u.completion_tokens,
+            "estimated_cost": u.estimated_cost, "created_at": u.created_at.isoformat(),
+        }
+        for u in recent.scalars().all()
+    ]
+    return {"days": days, "summary": summary, "recent": details}

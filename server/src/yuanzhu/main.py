@@ -39,6 +39,24 @@ async def health():
     return {"status": "ok", "mode": settings.mode, "version": "0.1.0"}
 
 
+# ---------- Web 控制台静态托管（ADR-002；构建产物 server/static） ----------
+from pathlib import Path as _Path
+from fastapi.staticfiles import StaticFiles as _StaticFiles
+from fastapi.responses import FileResponse as _FileResponse
+
+_STATIC_DIR = _Path(__file__).resolve().parent.parent.parent / "static"
+if _STATIC_DIR.is_dir():
+    app.mount("/assets", _StaticFiles(directory=str(_STATIC_DIR / "assets")), name="assets")
+
+    @app.get("/{full_path:path}", include_in_schema=False)
+    async def spa_fallback(full_path: str):
+        """SPA 兜底：静态文件直出，其余路径回 index.html（API 路由已先行注册，优先匹配）"""
+        file = _STATIC_DIR / full_path
+        if full_path and file.is_file():
+            return _FileResponse(file)
+        return _FileResponse(_STATIC_DIR / "index.html")
+
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run("yuanzhu.main:app", host="127.0.0.1", port=8600, reload=settings.debug)
