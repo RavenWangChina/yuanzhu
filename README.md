@@ -36,7 +36,7 @@ Web 控制台前端源码在 `web/`（Vite+Vue3，构建产物由 FastAPI 托管
 | 文档 | 内容 |
 |------|------|
 | [docs/specs/v0.1-design.md](docs/specs/v0.1-design.md) | v0.1 设计文档（已实现） |
-| [docs/架构决策记录.md](docs/架构决策记录.md) | ADR-001~013：全部已确认架构决策 |
+| [docs/架构决策记录.md](docs/架构决策记录.md) | ADR-001~014：全部已确认架构决策 |
 | [docs/技术验证路线.md](docs/技术验证路线.md) | 六假设验证路线（H1-H7）与出口条件 |
 | [docs/元流程-v2.md](docs/元流程-v2.md) | 六环节×知识环完整规格（工坊内核） |
 | [docs/Palantir范式学习报告.md](docs/Palantir范式学习报告.md) | 知识层轻量本体的设计依据 |

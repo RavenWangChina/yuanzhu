@@ -13,7 +13,8 @@ python -m venv .venv
 
 - Web 控制台：http://127.0.0.1:8600 （静态产物由 web/ 构建，已随仓）
 - MCP 端点：`POST /mcp`（tools/list | tools/call）
-- AI 步骤需 `.env` 配 `DEEPSEEK_API_KEY`；企微配置见 [docs/对话学习企微接入指南.md](../docs/对话学习企微接入指南.md)
+- 模型接入**零配置**：自动导入 dsh 已配 provider（ADR-014，OpenAI 兼容协议全家桶）；自定义端点用 `YUANZHU_PROVIDER_n_*` 环境变量
+- 企微配置（挂起中）见 [docs/对话学习企微接入指南.md](../docs/对话学习企微接入指南.md)
 - H2 测试种子：`python seed_h2.py`
 
 ## 结构
