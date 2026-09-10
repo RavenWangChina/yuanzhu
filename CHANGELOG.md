@@ -12,6 +12,6 @@
 - 仓库规范化：README、CHANGELOG、ROADMAP、目录结构（server/cli/edge/web/templates/deploy/plugins 骨架）
 - 致谢修正：DeepSeek 归属深度求索；战略评审人明确为周志明先生
 
-### Fixed（2026-09-09）
+### Fixed（2026-09-10 凌晨）
 - PDF 二进制污染：.gitattributes 声明 *.pdf binary（CRLF 转换曾损坏文件流）
 - 全文档一致性：三年画面 IM 表述→多形态 HMI；路线图/技术验证路线/ROADMAP 的 v0.1 描述同步双形态
