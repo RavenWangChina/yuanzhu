@@ -153,3 +153,20 @@ class ActionExec(Base):
     def exec_log(self) -> dict:
         """exec_log_json 的读别名（Response DTO 用）"""
         return self.exec_log_json or {}
+
+
+class Node(Base):
+    """边缘节点（ADR-003：注册/心跳 60s/在线状态/能力标签）"""
+    __tablename__ = "node"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    name = Column(String(100), unique=True, nullable=False, index=True)
+    token = Column(String(200), unique=True, nullable=False, index=True)
+
+    # online | busy | offline
+    status = Column(String(50), default="online", nullable=False, index=True)
+    capabilities = Column(JSON, nullable=False, default=dict)   # OS/DSH/GPU 标签
+    current_task_id = Column(Integer, nullable=True)
+    resource_usage = Column(JSON, nullable=True)                # {cpu, memory}
+    last_heartbeat = Column(DateTime, nullable=True)
+    registered_at = Column(DateTime, default=utcnow, nullable=False)
