@@ -46,6 +46,11 @@ class Object(Base):
 
     object_type = relationship("ObjectType", back_populates="objects")
 
+    @property
+    def properties(self) -> dict:
+        """properties_json 的读别名"""
+        return self.properties_json or {}
+
 
 class LinkType(Base):
     """链接类型定义"""
