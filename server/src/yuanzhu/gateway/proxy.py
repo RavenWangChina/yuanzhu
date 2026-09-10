@@ -1,22 +1,22 @@
-"""LiteLLM 代理薄层（OpenAI 兼容转发 + 计量提取）"""
+"""LiteLLM 代理薄层（多协议兼容转发 + 计量提取）
+
+模型路由走 ProviderRegistry（2026-09-10 兼容性改造）：
+dsh 配置导入（零配置复用 dsh 的 key）→ .env 自定义 → 内置兜底。
+一切 OpenAI 兼容端点（天翼云/vLLM/Ollama/one-api）经 openai-completions 协议接入。
+"""
 import litellm
 
 from yuanzhu.db.models import ModelUsage
 
-# 裸模型名 → litellm provider 路由（v0.1 按名直路由，ADR-003；
-# 供应商凭据走环境变量：DEEPSEEK_API_KEY 等 litellm 约定）
-LITELLM_MODEL_MAP = {
-    "deepseek-chat": "deepseek/deepseek-chat",
-    "deepseek-reasoner": "deepseek/deepseek-reasoner",
-    "qwen-plus": "dashscope/qwen-plus",
-}
-
 
 async def acompletion(**kwargs):
     """转发到 litellm；失败原样抛出（降级兜底由调用方处理并附上下文）"""
-    model = kwargs.get("model", "")
-    if model in LITELLM_MODEL_MAP:
-        kwargs["model"] = LITELLM_MODEL_MAP[model]
+    from yuanzhu.gateway.providers import get_registry
+    try:
+        resolved = get_registry().resolve(kwargs.get("model", ""))
+        kwargs.update(resolved)
+    except ValueError:
+        raise  # 未知模型：带可用清单的报错直接上抛
     return await litellm.acompletion(**kwargs)
 
 

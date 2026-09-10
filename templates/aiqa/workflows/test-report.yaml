@@ -20,7 +20,7 @@ steps:
       你是 QA 负责人。基于以下未解决缺陷清单，写一份简明的测试状态报告：
       总体风险评级、Top 风险项、建议动作。300 字以内，中文。
     prompt_var: open_bugs
-    model: deepseek-chat
+    model: glm-5.1
     output: report_content
 
   - id: publish

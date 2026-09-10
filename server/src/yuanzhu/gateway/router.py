@@ -9,8 +9,6 @@ from yuanzhu.gateway.proxy import acompletion, extract_usage, build_usage_record
 
 router = APIRouter(prefix="/v1", tags=["gateway"])
 
-# v0.1 按模型名直路由（ADR-003）；供应商凭据由环境变量提供（litellm 约定）
-KNOWN_MODELS = ["deepseek-chat", "deepseek-reasoner", "qwen-plus", "claude-sonnet-5"]
 
 
 class ChatMessage(BaseModel):
@@ -52,4 +50,6 @@ async def chat_completions(body: ChatCompletionRequest, db: AsyncSession = Depen
 
 @router.get("/models")
 async def list_models():
-    return {"object": "list", "data": [{"id": m, "object": "model"} for m in KNOWN_MODELS]}
+    """动态：来自 ProviderRegistry（dsh 导入 + .env 自定义 + 内置兜底的并集）"""
+    from yuanzhu.gateway.providers import get_registry
+    return {"object": "list", "data": [{"id": m, "object": "model"} for m in get_registry().models]}

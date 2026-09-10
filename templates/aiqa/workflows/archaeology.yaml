@@ -15,7 +15,7 @@ steps:
       识别核心功能点、边界条件、历史缺陷高发区。
       输出要点清单，每行一条。
     prompt_var: module_brief
-    model: deepseek-chat
+    model: glm-5.1
     output: analysis
 
   - id: design-cases
@@ -25,7 +25,7 @@ steps:
       严格按 JSON 数组输出，每项 {name, kind, module_name, steps, expected}，
       kind 只能是 positive 或 negative，不要输出其他文字。
     prompt_var: analysis
-    model: deepseek-chat
+    model: glm-5.1
     output: case_candidates
     expect_json: true
 

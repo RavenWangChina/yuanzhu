@@ -29,7 +29,7 @@ yuanzhu status && yuanzhu pending && yuanzhu templates
 .venv/Scripts/python seed_h2.py
 ```
 
-Web 控制台前端源码在 `web/`（Vite+Vue3，构建产物由 FastAPI 托管）；AI 步骤需在 `server/.env` 配置有效的模型 API key。
+Web 控制台前端源码在 `web/`（Vite+Vue3，构建产物由 FastAPI 托管）；模型接入零配置：网关自动导入 dsh 已配的 provider（天翼云等，OpenAI 兼容协议全家桶）；自定义端点用 `YUANZHU_PROVIDER_n_*` 环境变量。
 
 ## 文档导航
 

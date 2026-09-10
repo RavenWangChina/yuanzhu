@@ -12,6 +12,13 @@
 - 仓库规范化：README、CHANGELOG、ROADMAP、目录结构（server/cli/edge/web/templates/deploy/plugins 骨架）
 - 致谢修正：DeepSeek 归属深度求索；战略评审人明确为周志明先生
 
+### Added（2026-09-10 · 模型网关多协议兼容改造，117 测试全绿）
+- **Provider 注册表**（gateway/providers.py）：三层配置源——①dsh 配置导入（~/.dsh/settings.yaml 的 providers + credentials refs 解 key，dsh 用户**零配置复用**）②.env 自定义（YUANZHU_PROVIDER_n_{NAME,BASE_URL,API,KEY,MODELS}）③内置兜底（deepseek 等 litellm 原生）
+- **多协议映射**：openai-completions → litellm openai/ 前缀+api_base+api_key（一切 OpenAI 兼容端点：天翼云/vLLM/Ollama/one-api）；anthropic-messages 预留
+- **/v1/models 动态化**：返回全部已配置模型（本机实测 58 个——dsh 天翼云 provider 全家桶自动导入）
+- **全真链路实证**：dsh 天翼云 key 零配置 → GLM-5.1/5.2 真实对话 → AIQA 报告工作流（真实 Bug→GLM 分析→Report 进待审）→ 计量落库（1758 tokens）
+- AIQA 工作流默认模型改 glm-5.1（环境实际可用）
+
 ### Added（2026-09-10 · CLI 双 HMI 补齐，110 测试全绿）
 - **yuanzhu CLI**（ADR-012 开发者第一界面，API 薄壳）：status / query（经 MCP，k=v 过滤）/ pending / approve / reject（拒绝必附理由）/ templates / run（触发工作流）/ mcp tools；argparse 零新依赖，`pip install -e` 后 `yuanzhu` 命令可用；真实运行实证审批闭环
 
