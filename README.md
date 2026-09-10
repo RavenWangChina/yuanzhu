@@ -19,6 +19,9 @@ python -m venv .venv && .venv/Scripts/pip install -e ".[dev]"
 .venv/Scripts/python -m uvicorn yuanzhu.main:app --port 8600
 # 打开 http://127.0.0.1:8600 （待审中心/模板市场/节点拓扑/用量审计）
 
+# CLI（开发者第一界面）
+yuanzhu status && yuanzhu pending && yuanzhu templates
+
 # 跑测试
 .venv/Scripts/python -m pytest tests/
 

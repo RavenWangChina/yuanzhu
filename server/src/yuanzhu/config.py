@@ -8,6 +8,7 @@ class Settings(BaseSettings):
     mcp_endpoint: str = "/mcp"
     mode: str = "standalone"
     debug: bool = False
+    base_url: str = "http://127.0.0.1:8600"   # CLI 连中控
 
     # 企微对话学习（管理员在企微后台自助配置后填入 .env）
     wecom_token: str = ""          # 回调验签 token

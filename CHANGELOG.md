@@ -12,6 +12,9 @@
 - 仓库规范化：README、CHANGELOG、ROADMAP、目录结构（server/cli/edge/web/templates/deploy/plugins 骨架）
 - 致谢修正：DeepSeek 归属深度求索；战略评审人明确为周志明先生
 
+### Added（2026-09-10 · CLI 双 HMI 补齐，110 测试全绿）
+- **yuanzhu CLI**（ADR-012 开发者第一界面，API 薄壳）：status / query（经 MCP，k=v 过滤）/ pending / approve / reject（拒绝必附理由）/ templates / run（触发工作流）/ mcp tools；argparse 零新依赖，`pip install -e` 后 `yuanzhu` 命令可用；真实运行实证审批闭环
+
 ### Added（2026-09-10 · v0.1 全部代码交付，104 测试全绿）
 - **本体层（H7 基座）**：六表 schema（对象/链接/动作类型+实例+执行记录）；三类 DSL 解析器（YAML→注册）；staged writes 状态机（staged→approved→applied/rejected/reverted）——transform 规则引擎（set 改属性 / create_object 建对象，from:/literal: 值解析，数据驱动无硬编码动作名）；submission_criteria 语义校验；autonomy L1 自动/L2+ 人审；幂等键；补偿事务（快照恢复+建对象删除）
 - **MCP 暴露**：/mcp 端点（tools/list + tools/call）；exposed 对象类型与动作类型自动生成 agent 工具（query_/execute_ 命名，大小写不敏感回查）；审批三工具
