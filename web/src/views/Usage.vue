@@ -4,6 +4,7 @@
     <p class="page-desc">模型调用量 / token / 估费，以及最近调用明细</p>
 
     <div v-if="loading" class="empty">加载中…</div>
+    <div v-else-if="loadError" class="empty card" style="color:var(--danger)">{{ loadError }}</div>
     <template v-else>
       <div v-if="data.summary.length === 0" class="empty card">近 {{ data.days }} 天暂无模型调用</div>
 
@@ -49,9 +50,12 @@ import { api } from '../api'
 const data = ref<{ days: number; summary: any[]; recent: any[] }>({ days: 7, summary: [], recent: [] })
 const loading = ref(true)
 
+const loadError = ref('')
 onMounted(async () => {
   try {
     data.value = await api.get('/api/usage?days=7')
+  } catch (e) {
+    loadError.value = `用量数据加载失败：${String(e).replace('Error: ', '')}`
   } finally {
     loading.value = false
   }

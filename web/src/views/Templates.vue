@@ -4,6 +4,7 @@
     <p class="page-desc">已安装的工作流模板——点「使用」即可运行，产出进入待审中心等你确认</p>
 
     <div v-if="loading" class="empty">加载中…</div>
+    <div v-else-if="loadError" class="empty card" style="color:var(--danger)">{{ loadError }}</div>
     <div v-else-if="templates.length === 0" class="empty card">
       暂无模板。把模板目录注册到中控：<code>POST /api/templates/register</code>
     </div>
@@ -147,9 +148,12 @@ async function submitRun() {
   }
 }
 
+const loadError = ref('')
 onMounted(async () => {
   try {
     templates.value = await api.get('/api/templates')
+  } catch (e) {
+    loadError.value = `模板列表加载失败：${String(e).replace('Error: ', '')}`
   } finally {
     loading.value = false
   }

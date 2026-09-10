@@ -19,7 +19,7 @@ async def client(db_session, monkeypatch):
 
     # 提炼 job 的模型调用 mock
     import yuanzhu.dialog.refinement as ref_mod
-    async def fake_llm(prompt: str) -> str:
+    async def fake_llm(prompt: str, **kwargs) -> str:
         return """[
           {"name": "每日站会纪要", "description": "群内高频：张三每天早9点要昨日测试进展汇总",
            "trigger": "每日 09:00", "steps_draft": ["查询昨日 Bug 变更", "AI 汇总成纪要", "发回群"],

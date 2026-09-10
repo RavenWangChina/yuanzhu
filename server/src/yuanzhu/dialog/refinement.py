@@ -26,10 +26,10 @@ layer 只能填"协同层"（诚实边界：对话学习预期承载协同层，
 只输出 JSON 数组，不要其他文字。提炼不出就输出 []。"""
 
 
-async def call_model(prompt: str, model: str = "deepseek-chat") -> str:
-    """经模型网关调用（测试被 monkeypatch 替换）"""
+async def call_model(prompt: str, model: str = "deepseek-chat", session=None) -> str:
+    """经模型网关调用（测试被 monkeypatch 替换；session 透传做计量 I4）"""
     from yuanzhu.workflow.engine import call_model as _call
-    return await _call(model, prompt)
+    return await _call(model, prompt, session=session, caller="dialog-refine")
 
 
 async def refine_to_drafts(
@@ -54,7 +54,7 @@ async def refine_to_drafts(
     ]
     prompt = REFINE_PROMPT_PREFIX + "\n\n消息样本：\n" + json.dumps(sample, ensure_ascii=False)
 
-    content = await call_model(prompt)
+    content = await call_model(prompt, session=session)
     candidates = _parse_json_array(content)
 
     drafts = []

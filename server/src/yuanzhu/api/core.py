@@ -88,11 +88,20 @@ class TemplateRegisterRequest(BaseModel):
     path: str  # v0.1 本地目录注册；zip 上传留后续里程碑
 
 
+# I3 修复：模板注册根白名单（防任意目录注册 → 动作注入 + MCP 执行面）
+TEMPLATE_ROOTS = [Path(__file__).resolve().parents[4] / "templates"]
+
+
 @router.post("/templates/register")
 async def register_template(body: TemplateRegisterRequest, db: AsyncSession = Depends(get_db)):
-    tpl_dir = Path(body.path)
+    tpl_dir = Path(body.path).resolve()
     if not tpl_dir.is_dir():
         raise HTTPException(status_code=400, detail=f"模板目录不存在: {body.path}")
+    if not any(tpl_dir.is_relative_to(root.resolve()) for root in TEMPLATE_ROOTS if root.is_dir()):
+        raise HTTPException(
+            status_code=400,
+            detail=f"模板目录必须在服务端 templates/ 白名单根之下（收到: {body.path}）",
+        )
     try:
         return await TemplateStore(db).register_dir(tpl_dir)
     except ValueError as e:

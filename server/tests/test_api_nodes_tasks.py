@@ -88,24 +88,30 @@ async def test_task_list_and_detail(client):
 # ---------- 模板 ----------
 
 async def test_template_register_and_list(client, tmp_path):
-    """模板注册 API（上传目录形态 v0.1 用本地路径，zip 上传留后续）"""
-    (tmp_path / "manifest.yaml").write_text(
-        "name: mini\nversion: 0.1.0\ndomain: mini\n", encoding="utf-8")
-    (tmp_path / "ontology").mkdir()
-    (tmp_path / "ontology" / "object-types.yaml").write_text(
-        "types:\n  - name: Item\n    properties:\n      name: {type: string, required: true}\n",
-        encoding="utf-8")
+    """模板注册 API（白名单根下的临时目录；zip 上传留后续）"""
+    import shutil
+    tpl_root = Path(__file__).resolve().parents[2] / "templates" / "_test_tmp"
+    tpl_root.mkdir(parents=True, exist_ok=True)
+    try:
+        (tpl_root / "manifest.yaml").write_text(
+            "name: mini\nversion: 0.1.0\ndomain: mini\n", encoding="utf-8")
+        (tpl_root / "ontology").mkdir(exist_ok=True)
+        (tpl_root / "ontology" / "object-types.yaml").write_text(
+            "types:\n  - name: Item\n    properties:\n      name: {type: string, required: true}\n",
+            encoding="utf-8")
 
-    resp = await client.post("/api/templates/register", json={"path": str(tmp_path)})
-    assert resp.status_code == 200
-    assert resp.json()["name"] == "mini"
-    assert resp.json()["status"] == "published"
+        resp = await client.post("/api/templates/register", json={"path": str(tpl_root)})
+        assert resp.status_code == 200
+        assert resp.json()["name"] == "mini"
+        assert resp.json()["status"] == "published"
 
-    resp = await client.get("/api/templates")
-    assert any(t["name"] == "mini" for t in resp.json())
+        resp = await client.get("/api/templates")
+        assert any(t["name"] == "mini" for t in resp.json())
 
-    # 幂等
-    resp = await client.post("/api/templates/register", json={"path": str(tmp_path)})
-    assert resp.status_code == 200
-    resp = await client.get("/api/templates?domain=mini")
-    assert len(resp.json()) == 1
+        # 幂等
+        resp = await client.post("/api/templates/register", json={"path": str(tpl_root)})
+        assert resp.status_code == 200
+        resp = await client.get("/api/templates?domain=mini")
+        assert len(resp.json()) == 1
+    finally:
+        shutil.rmtree(tpl_root, ignore_errors=True)

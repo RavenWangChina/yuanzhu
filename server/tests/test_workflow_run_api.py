@@ -19,7 +19,7 @@ async def client(db_session, monkeypatch):
 
     # ai_step 模型 mock
     import yuanzhu.workflow.engine as engine_mod
-    async def fake_chat(model: str, prompt: str) -> str:
+    async def fake_chat(model: str, prompt: str, **kwargs) -> str:
         return "风险中等，建议回归支付模块。"
     monkeypatch.setattr(engine_mod, "call_model", fake_chat)
 

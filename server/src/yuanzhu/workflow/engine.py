@@ -17,10 +17,11 @@ from yuanzhu.ontology.object_store import ObjectStore
 from yuanzhu.ontology.action_store import ActionStore
 
 
-async def call_model(model: str, prompt: str) -> str:
+async def call_model(model: str, prompt: str, session=None, caller: str = "ai-step") -> str:
     """ai_step 的模型调用（经网关；测试被 monkeypatch 替换）
 
     失败转 ValueError（携带模型名上下文）——不带上下文的兜底=二次浪费（DMLA）。
+    I4 修复：session 提供时提取 usage 落 ModelUsage（成本计量不再绕过）。
     """
     from yuanzhu.gateway.proxy import acompletion
     try:
@@ -31,6 +32,16 @@ async def call_model(model: str, prompt: str) -> str:
     except Exception as e:
         raise ValueError(f"AI 步骤模型调用失败（model={model}）: {e}") from e
     data = response if isinstance(response, dict) else response.model_dump()
+
+    if session is not None:
+        try:
+            from yuanzhu.gateway.proxy import extract_usage, build_usage_record
+            usage = extract_usage(response)
+            session.add(build_usage_record(
+                model=model, usage=usage, task_id=None, caller=caller))
+        except Exception:
+            pass  # 计量失败不阻断主流程（usage 缺失时记 0）
+
     return data["choices"][0]["message"]["content"]
 
 
@@ -125,7 +136,8 @@ class WorkflowEngine:
             variable = json.dumps(variable, ensure_ascii=False)
 
         prompt = f"{prefix}\n\n{variable}" if variable is not None else prefix
-        content = await call_model(step.get("model", "deepseek-chat"), prompt)
+        content = await call_model(step.get("model", "deepseek-chat"), prompt,
+                                   session=self.session, caller="ai-step")
 
         result: Any = content
         if step.get("expect_json"):

@@ -52,10 +52,14 @@ if _STATIC_DIR.is_dir():
 
     @app.get("/{full_path:path}", include_in_schema=False)
     async def spa_fallback(full_path: str):
-        """SPA 兜底：静态文件直出，其余路径回 index.html（API 路由已先行注册，优先匹配）"""
-        file = _STATIC_DIR / full_path
-        if full_path and file.is_file():
-            return _FileResponse(file)
+        """SPA 兜底：静态文件直出，其余路径回 index.html（API 路由已先行注册，优先匹配）
+
+        C2 修复：resolve + is_relative_to 防路径穿越（%2e%2e 编码绕过客户端规范化）。
+        """
+        if full_path:
+            file = (_STATIC_DIR / full_path).resolve()
+            if file.is_file() and file.is_relative_to(_STATIC_DIR.resolve()):
+                return _FileResponse(file)
         return _FileResponse(_STATIC_DIR / "index.html")
 
 

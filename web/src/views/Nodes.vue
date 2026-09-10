@@ -4,6 +4,7 @@
     <p class="page-desc">已注册的执行节点（单机模式下显示内置执行器）</p>
 
     <div v-if="loading" class="empty">加载中…</div>
+    <div v-else-if="loadError" class="empty card" style="color:var(--danger)">{{ loadError }}</div>
     <div v-else-if="nodes.length === 0" class="empty card">暂无节点注册</div>
 
     <div class="card" style="padding:0">
@@ -60,9 +61,12 @@ function heartbeatText(t: string | null) {
   return new Date(t).toLocaleString('zh-CN')
 }
 
+const loadError = ref('')
 onMounted(async () => {
   try {
     nodes.value = await api.get('/api/nodes')
+  } catch (e) {
+    loadError.value = `节点列表加载失败：${String(e).replace('Error: ', '')}`
   } finally {
     loading.value = false
   }

@@ -156,8 +156,8 @@ async def test_invalid_transitions_blocked(db_session, sample_object_type, sampl
         sample_action_type.id, {"object_id": bug.id, "priority": 2},
         "agent", f"{bug.id}-ChangePriority",
     )
-    with pytest.raises(ValueError, match="approved"):
-        await sm.apply(exec.id)  # staged → apply 非法
+    with pytest.raises(ValueError, match="不可应用|乐观锁"):
+        await sm.apply(exec.id)  # staged → apply 非法（乐观锁拦截）
 
 
 async def test_list_pending(db_session, sample_object_type, sample_action_type):

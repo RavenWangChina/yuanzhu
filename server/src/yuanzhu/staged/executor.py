@@ -28,7 +28,8 @@ class ActionExecutor:
 
     async def execute(self, exec: ActionExec, action_type: ActionType) -> ActionExec:
         params: Dict[str, Any] = exec.params_json or {}
-        log = exec.exec_log_json or {}
+        # C1 修复：深拷贝脱离既有引用——same-ref 赋值不触发 SQLAlchemy 变更检测
+        log = copy.deepcopy(exec.exec_log_json or {})
         object_id = params.get("object_id")
         transform_log = []
 
@@ -45,6 +46,8 @@ class ActionExecutor:
                 if not obj:
                     raise ValueError(f"目标对象不存在: {object_id}")
                 if "before" not in log:
+                    # I2 修复：生效点快照（非 stage 点）——revert 基线是本次 apply 看到的值，
+                    # 避免 stage 后其他动作的修改被 revert 无声吞掉
                     log["before"] = copy.deepcopy(obj.properties_json or {})
                 # 累积应用：基于对象当前属性（多条 set 不互相覆盖）
                 new_props = apply_transform([rule], params, obj.properties_json or {})

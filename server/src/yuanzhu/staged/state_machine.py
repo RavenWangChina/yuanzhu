@@ -13,7 +13,7 @@ autonomy（ADR-006 读高写低）：
 import copy
 from typing import Dict, Any, List, Optional
 
-from sqlalchemy import select
+from sqlalchemy import select, update
 from jsonschema import validate as schema_validate, ValidationError
 
 from yuanzhu.db.models import ActionType, ActionExec, utcnow
@@ -115,14 +115,20 @@ class StagedStateMachine:
     async def approve(
         self, exec_id: int, reviewed_by: str, review_comment: Optional[str] = None
     ) -> ActionExec:
-        exec = await self._get_exec(exec_id)
-        self._transition(exec, "approved")
-        exec.reviewed_by = reviewed_by
-        exec.reviewed_at = utcnow()
-        exec.review_comment = review_comment
+        """C3 修复：乐观锁审批——DB 层 WHERE status='staged' 抢占，输者明确报错"""
+        result = await self.session.execute(
+            update(ActionExec)
+            .where(ActionExec.id == exec_id, ActionExec.status == "staged")
+            .values(status="approved", reviewed_by=reviewed_by,
+                    reviewed_at=utcnow(), review_comment=review_comment)
+        )
+        if result.rowcount == 0:
+            current = await self._get_exec(exec_id)
+            raise ValueError(
+                f"动作 #{exec_id} 已被处理（当前状态 {current.status}）——审批乐观锁拦截"
+            )
         await self.session.flush()
-        await self.session.refresh(exec)
-        return exec
+        return await self._get_exec(exec_id)
 
     async def reject(
         self, exec_id: int, reviewed_by: str, review_comment: str
@@ -137,13 +143,32 @@ class StagedStateMachine:
         return exec
 
     async def apply(self, exec_id: int, action_type: Optional[ActionType] = None) -> ActionExec:
-        """应用 approved 动作（transform 规则执行 + 副作用记录）"""
+        """应用 approved 动作（transform 规则执行 + 副作用记录）
+
+        C3：DB 层乐观锁抢占 approved→applied；
+        I1：执行前复查 submission_criteria（TOCTOU——审批等待期对象可能已变化）。
+        """
+        result = await self.session.execute(
+            update(ActionExec)
+            .where(ActionExec.id == exec_id, ActionExec.status == "approved")
+            .values(status="applied", applied_at=utcnow())
+        )
+        if result.rowcount == 0:
+            current = await self._get_exec(exec_id)
+            raise ValueError(
+                f"动作 #{exec_id} 状态为 {current.status}，不可应用（乐观锁拦截）"
+            )
+
         exec = await self._get_exec(exec_id)
-        self._transition(exec, "applied")
         if action_type is None:
             action_type = await self.session.get(ActionType, exec.action_type_id)
+
+        # I1：生效点复查语义前置条件（stage 时的校验可能已过期）
+        await validate_submission_criteria(
+            action_type.submission_criteria_json, exec.params_json or {}, self.object_store
+        )
+
         exec = await self.executor.execute(exec, action_type)
-        exec.status = "applied"
         await self.session.flush()
         await self.session.refresh(exec)
         return exec

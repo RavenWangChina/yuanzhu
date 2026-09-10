@@ -34,9 +34,8 @@ class MCPHandlers:
         obj_type = await self.object_store.get_type_by_name_ci(domain, type_name)
         if not obj_type:
             return {"error": f"对象类型不存在: {domain}/{type_name}"}
-        objects = await self.object_store.list_objects(
-            type_id=obj_type.id, limit=params.get("limit", 10)
-        )
+        limit = min(int(params.get("limit", 10) or 10), 200)  # I5：DoS 面钳制
+        objects = await self.object_store.list_objects(type_id=obj_type.id, limit=limit)
 
         filters = params.get("filter") or {}
         matched = [

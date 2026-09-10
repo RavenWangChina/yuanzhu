@@ -22,7 +22,7 @@ def _mock_ai(monkeypatch, responses: list):
     """按调用次序返回预置回复（记录调用以断言提示词分区）"""
     calls = []
 
-    async def fake_chat(model: str, prompt: str) -> str:
+    async def fake_chat(model: str, prompt: str, **kwargs) -> str:
         calls.append({"model": model, "prompt": prompt})
         return responses.pop(0)
 

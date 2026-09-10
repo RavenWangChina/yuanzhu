@@ -48,6 +48,7 @@ async def list_objects(
     offset: int = 0,
     db: AsyncSession = Depends(get_db),
 ):
+    limit = min(max(limit, 1), 500)  # I5：钳制
     return await ObjectStore(db).list_objects(
         domain=domain, type_id=type_id, created_by=created_by, limit=limit, offset=offset
     )

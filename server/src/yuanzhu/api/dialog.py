@@ -28,11 +28,13 @@ async def wecom_verify(msg_signature: str = "", timestamp: str = "",
     启用加密后（YUANZHU_WECOM_AES_KEY 已配）：验签+解密 echostr 再回显——
     ponytail: v0.1 明文先行，AES 通道挂账（配置项已留）。
     """
-    if settings.wecom_aes_key:
-        # 加密模式占位：验签失败拒绝（不回显）
-        # ponytail: AES-SHA1 验签+解密实现挂账，配置好 key 前不会走到这里
-        pass
     from fastapi.responses import PlainTextResponse
+    if settings.wecom_aes_key:
+        # M1 修复：配了 key 但验签实现未就绪 → fail-closed（拒绝而非静默明文，防虚假安全感）
+        raise HTTPException(
+            status_code=503,
+            detail="已配置 AES key 但验签通道未实现——拒绝明文回显（挂账：AES 验签实现）",
+        )
     return PlainTextResponse(echostr if echostr else "ok")
 
 
@@ -42,6 +44,8 @@ async def wecom_receive(request: Request):
 
     合规：只处理已授权群（chat_id 白名单可配）；原文不落库。
     """
+    if settings.wecom_aes_key:
+        raise HTTPException(status_code=503, detail="已配置 AES key 但验签通道未实现——拒绝接收")
     try:
         message = await request.json()
     except Exception:
