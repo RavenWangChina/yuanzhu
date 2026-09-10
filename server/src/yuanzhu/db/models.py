@@ -170,3 +170,37 @@ class Node(Base):
     resource_usage = Column(JSON, nullable=True)                # {cpu, memory}
     last_heartbeat = Column(DateTime, nullable=True)
     registered_at = Column(DateTime, default=utcnow, nullable=False)
+
+
+class Task(Base):
+    """任务（ADR-003：pending→dispatched→running→done/failed/cancelled）"""
+    __tablename__ = "task"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    template_id = Column(Integer, nullable=True, index=True)
+    template_version = Column(String(50), nullable=True)
+    params_json = Column(JSON, nullable=False, default=dict)
+
+    status = Column(String(50), default="pending", nullable=False, index=True)
+    assigned_node_id = Column(Integer, ForeignKey("node.id"), nullable=True, index=True)
+
+    # 标准结构：{"steps": [...], "errors": [...], "timestamps": {...}}
+    exec_log_json = Column(JSON, nullable=True)
+    result_json = Column(JSON, nullable=True)
+
+    created_by = Column(String(100), nullable=True, index=True)
+    created_at = Column(DateTime, default=utcnow, nullable=False)
+    completed_at = Column(DateTime, nullable=True)
+
+    @property
+    def params(self) -> dict:
+        """params_json 读别名（Response DTO 用）"""
+        return self.params_json or {}
+
+    @property
+    def result(self) -> dict:
+        return self.result_json or {}
+
+    @property
+    def exec_log(self) -> dict:
+        return self.exec_log_json or {}
