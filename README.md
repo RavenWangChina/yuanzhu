@@ -35,6 +35,7 @@ Web 控制台前端源码在 `web/`（Vite+Vue3，构建产物由 FastAPI 托管
 
 | 文档 | 内容 |
 |------|------|
+| **[docs/使用场景与接入形态.md](docs/使用场景与接入形态.md)** | **入门首选：三种用户怎么用 + Claude Code 接入** |
 | [docs/specs/v0.1-design.md](docs/specs/v0.1-design.md) | v0.1 设计文档（已实现） |
 | [docs/架构决策记录.md](docs/架构决策记录.md) | ADR-001~014：全部已确认架构决策 |
 | [docs/技术验证路线.md](docs/技术验证路线.md) | 六假设验证路线（H1-H7）与出口条件 |
@@ -57,7 +58,7 @@ Web 控制台前端源码在 `web/`（Vite+Vue3，构建产物由 FastAPI 托管
 
 ## License
 
-待定（AGPL/SSPL 类强保护协议选型中，见 ADR-009）。
+**AGPL-3.0**（强保护协议：防闭源白嫖，为企业版保留商业授权空间——ADR-009 决策）。
 
 ## 致谢
 
