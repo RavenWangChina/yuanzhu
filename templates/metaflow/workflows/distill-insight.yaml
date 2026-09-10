@@ -1,0 +1,34 @@
+# 洞见沉淀（知识环外环：被采纳的答案提炼可复用结论，后续提问自动反哺）
+name: distill-insight
+description: 从已采纳的答案提炼可复用洞见（人审后入库，下次深度问答自动引用）
+params_schema:
+  - name: question
+    label: 原问题
+    type: text
+    required: true
+  - name: answer
+    label: 答案内容（粘贴采纳的答案）
+    type: text
+    required: true
+steps:
+  - id: distill
+    type: ai_step
+    prompt_prefix: |
+      你是知识管理专家。从这份问答中提炼 1-3 条"可复用洞见"——
+      不是复述答案，而是这个答案里**换一个问题还能用**的判断力（决策原则/踩坑规律/判断标准）。
+      严格按 JSON 数组输出，每项：
+      {"takeaway": "一句话洞见", "context": "适用场景说明"}
+      提炼不出就输出 []。
+    prompt_vars: ["params"]
+    model: glm-5.1
+    output: insights
+    expect_json: true
+
+  - id: submit
+    type: action_step
+    action: DistillInsight
+    iterate_over: insights
+    params:
+      takeaway: $item.takeaway
+      source_question: $params.question
+      context: $item.context

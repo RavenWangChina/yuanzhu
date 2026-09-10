@@ -130,13 +130,23 @@ class WorkflowEngine:
 
     async def _ai_step(self, step: Dict[str, Any], context: Dict[str, Any]) -> Dict[str, Any]:
         prefix = (step.get("prompt_prefix") or "").strip()
-        var_name = step.get("prompt_var")
-        variable = context.get(var_name) if var_name else None
-        if isinstance(variable, (list, dict)):
-            variable = json.dumps(variable, ensure_ascii=False)
+        # 单上游（prompt_var）或多上游（prompt_vars，带标注块拼接——视角对抗/综合裁决）
+        var_names = step.get("prompt_vars") or ([step["prompt_var"]] if step.get("prompt_var") else [])
+        parts = []
+        for name in var_names:
+            v = context.get(name)
+            if v is None:
+                continue
+            if isinstance(v, (list, dict)):
+                v = json.dumps(v, ensure_ascii=False)
+            if len(var_names) > 1:
+                parts.append(f"【{name}】\n{v}")
+            else:
+                parts.append(str(v))
+        variable = "\n\n".join(parts) if parts else None
 
         prompt = f"{prefix}\n\n{variable}" if variable is not None else prefix
-        content = await call_model(step.get("model", "deepseek-chat"), prompt,
+        content = await call_model(step.get("model", "glm-5.1"), prompt,
                                    session=self.session, caller="ai-step")
 
         result: Any = content

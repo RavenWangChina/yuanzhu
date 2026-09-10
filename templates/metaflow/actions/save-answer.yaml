@@ -1,0 +1,18 @@
+# 采纳答案（元流程产出的答案，人审采纳后入库）
+name: SaveAnswer
+description_for_agent: 保存一份经流水线产出的深度答案（进入待审中心，人采纳后入库）
+autonomy_level: 2
+requires_staging: true
+idempotency_key_template: "ans-{question}"
+params:
+  type: object
+  properties:
+    question: {type: string}
+    content: {type: string}
+  required: [question, content]
+transform:
+  - create_object:
+      type: Answer
+    with:
+      question: from:params.question
+      content: from:params.content

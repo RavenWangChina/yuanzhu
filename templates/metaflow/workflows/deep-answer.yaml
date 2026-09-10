@@ -1,0 +1,83 @@
+# 深度问答（元流程六环节的问答投影——装完即用，不开发任何东西）
+# 环节映射：澄清(1需求挖掘)→双视角(2方案对抗)→审查(4双通道)→综合(5验证)→采纳(6硬化)
+# 知识环：开头 recall 历史洞见反哺；答案采纳后可另跑 distill-insight 沉淀
+name: deep-answer
+description: 深度问答——多视角对抗+审查+综合裁决，产出结构化高质量答案（人采纳后入库）
+params_schema:
+  - name: question
+    label: 你的问题
+    type: text
+    required: true
+    placeholder: 例如：我们 20 人的团队该不该自建 AI 中台？
+steps:
+  - id: recall
+    type: query_step
+    object_type: Insight
+    output: insights            # 知识环：历史洞见反哺
+
+  - id: clarify
+    type: ai_step               # 环节1 需求挖掘
+    prompt_prefix: |
+      你是需求分析师。对下面的问题做快速澄清（不回答问题本身）：
+      1. 这个问题最可能的 2-3 种不同理解（提问者真正想决策的可能是哪件事）
+      2. 关键未知信息（缺了什么导致没法给确定答案）
+      3. 若存在历史洞见，指出哪些直接相关。
+      简洁输出，总共不超过 200 字。
+    prompt_vars: ["params", "insights"]
+    model: glm-5.1
+    output: clarification
+
+  - id: view-a
+    type: ai_step               # 环节2 方案（视角A：务实推进者）
+    prompt_prefix: |
+      你是务实的资深工程师/推进者（视角A）。基于澄清要点回答问题：
+      直接给可执行主张+理由+关键步骤。敢于下判断，但标注你的假设。
+      500 字以内。
+    prompt_vars: ["clarification"]
+    model: glm-5.1
+    output: ans_a
+
+  - id: view-b
+    type: ai_step               # 环节2 对抗（视角B：质疑者）
+    prompt_prefix: |
+      你是尖锐的质疑者/devil's advocate（视角B）。针对视角A的主张：
+      1. 找出最强的 2-3 个反驳（事实性风险，不是抬杠）
+      2. 指出视角A忽略了什么（隐含假设、长期代价、反例）
+      3. 给出你会主张的替代路线。
+      400 字以内。
+    prompt_vars: ["ans_a"]
+    model: glm-5.1
+    output: ans_b
+
+  - id: audit
+    type: ai_step               # 环节4 双通道审查
+    prompt_prefix: |
+      你是独立审查员。不站队，审查两方输出：
+      1. 双方事实层面的矛盾点（谁对谁错能判就判，判不了说缺什么证据）
+      2. 两方共同的盲区（都没想到的）
+      3. 过度承诺/过度悲观之处。
+      300 字以内，只做审查不给结论。
+    prompt_vars: ["ans_a", "ans_b"]
+    model: glm-5.1
+    output: audit
+
+  - id: verdict
+    type: ai_step               # 环节5 综合验证
+    prompt_prefix: |
+      你是最终裁决人。综合视角A、视角B、审查报告，产出结构化最终答案：
+      【结论】明确回答（该/不该/分情况——分情况就给判断标准）
+      【双方有效点】各保留什么
+      【主要风险与前置条件】
+      【建议下一步】1-3 条具体动作
+      【置信度】高/中/低 + 一句话理由
+      700 字以内。结论必须落到可执行，禁止"两边都有道理"式和稀泥。
+    prompt_vars: ["ans_a", "ans_b", "audit"]
+    model: glm-5.1
+    output: final
+
+  - id: save
+    type: action_step           # 环节6 硬化：人审采纳
+    action: SaveAnswer
+    params:
+      question: $params.question
+      content: $final

@@ -1,0 +1,21 @@
+# 元流程问答域评测
+cases:
+  - name: 采纳答案-人审后入库
+    steps:
+      - action: SaveAnswer
+        params: {question: eval-测试问题, content: "【结论】测试通过"}
+        expect: {status: staged}
+      - approve: {}
+    expect:
+      status: applied
+      object_exists: {type: Answer, question: eval-测试问题}
+
+  - name: 沉淀洞见-人审后入库
+    steps:
+      - action: DistillInsight
+        params: {takeaway: eval-测试洞见, source_question: eval-测试问题}
+        expect: {status: staged}
+      - approve: {}
+    expect:
+      status: applied
+      object_exists: {type: Insight, takeaway: eval-测试洞见}

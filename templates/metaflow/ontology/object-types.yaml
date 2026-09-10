@@ -1,0 +1,19 @@
+# 元流程问答域对象（答案资产 + 知识环洞见）
+types:
+  - name: Answer
+    title_key: question
+    description: 经元流程流水线产出并被人采纳的深度答案
+    exposed: true
+    properties:
+      question: {type: string, required: true}
+      content: {type: string}
+      adopted_by: {type: string}
+
+  - name: Insight
+    title_key: takeaway
+    description: 从答案提炼的可复用洞见（知识环——后续提问自动引用）
+    exposed: true
+    properties:
+      takeaway: {type: string, required: true}
+      source_question: {type: string}
+      context: {type: string}

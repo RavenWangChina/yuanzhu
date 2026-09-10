@@ -1,0 +1,20 @@
+# 沉淀洞见（从被采纳的答案提炼可复用结论，知识环）
+name: DistillInsight
+description_for_agent: 沉淀一条可复用洞见（进入待审中心，人确认后入库供后续提问自动引用）
+autonomy_level: 2
+requires_staging: true
+idempotency_key_template: "insight-{takeaway}"
+params:
+  type: object
+  properties:
+    takeaway: {type: string}
+    source_question: {type: string}
+    context: {type: string}
+  required: [takeaway]
+transform:
+  - create_object:
+      type: Insight
+    with:
+      takeaway: from:params.takeaway
+      source_question: from:params.source_question
+      context: from:params.context
