@@ -10,6 +10,7 @@ from yuanzhu.api.objects import router as objects_router
 from yuanzhu.api.actions import router as actions_router
 from yuanzhu.api.staged import router as staged_router
 from yuanzhu.api.core import router as core_router
+from yuanzhu.gateway.router import router as gateway_router
 
 
 @asynccontextmanager
@@ -30,6 +31,7 @@ app.include_router(objects_router)
 app.include_router(actions_router)
 app.include_router(staged_router)
 app.include_router(core_router)
+app.include_router(gateway_router)
 
 
 @app.get("/health")

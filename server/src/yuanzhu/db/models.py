@@ -4,7 +4,7 @@
 Windows Git Bash 的 date 输出是 UTC，但权威时间源以 PowerShell 为准——
 代码内不依赖 shell date，统一用 timezone aware 的 utcnow()。
 """
-from sqlalchemy import Column, Integer, String, Text, Boolean, DateTime, ForeignKey, JSON, UniqueConstraint
+from sqlalchemy import Column, Integer, String, Text, Boolean, DateTime, ForeignKey, JSON, UniqueConstraint, Float
 from sqlalchemy.orm import relationship
 from datetime import datetime, timezone
 
@@ -230,3 +230,17 @@ class Template(Base):
     status = Column(String(50), default="published", nullable=False, index=True)
     created_at = Column(DateTime, default=utcnow, nullable=False)
     updated_at = Column(DateTime, default=utcnow, onupdate=utcnow, nullable=False)
+
+
+class ModelUsage(Base):
+    """模型网关计量（ADR-003：谁/任务/模型/token/估费）"""
+    __tablename__ = "model_usage"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    model = Column(String(100), nullable=False, index=True)
+    task_id = Column(Integer, nullable=True, index=True)
+    caller = Column(String(100), nullable=True)          # ai-step / node / user
+    prompt_tokens = Column(Integer, nullable=False, default=0)
+    completion_tokens = Column(Integer, nullable=False, default=0)
+    estimated_cost = Column(Float, nullable=False, default=0.0)
+    created_at = Column(DateTime, default=utcnow, nullable=False, index=True)
