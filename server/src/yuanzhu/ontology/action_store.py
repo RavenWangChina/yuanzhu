@@ -1,6 +1,6 @@
 """动作类型存储：upsert + DSL 注册 + 查询"""
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import select, func
 from typing import Optional, Dict, Any, List
 
 from yuanzhu.db.models import ActionType
@@ -47,6 +47,16 @@ class ActionStore:
     async def get_type_by_name(self, domain: str, name: str) -> Optional[ActionType]:
         result = await self.session.execute(
             select(ActionType).where(ActionType.domain == domain, ActionType.name == name)
+        )
+        return result.scalar_one_or_none()
+
+    async def get_type_by_name_ci(self, domain: str, name: str) -> Optional[ActionType]:
+        """大小写不敏感匹配（MCP 工具名 lower 后回查）"""
+        result = await self.session.execute(
+            select(ActionType).where(
+                func.lower(ActionType.domain) == domain.lower(),
+                func.lower(ActionType.name) == name.lower(),
+            )
         )
         return result.scalar_one_or_none()
 

@@ -1,6 +1,6 @@
 """对象存储层：类型 CRUD（upsert）+ 实例 CRUD + schema 校验"""
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import select, func
 from typing import List, Optional, Dict, Any
 
 from jsonschema import validate, ValidationError
@@ -59,6 +59,16 @@ class ObjectStore:
     async def get_type_by_name(self, domain: str, name: str) -> Optional[ObjectType]:
         result = await self.session.execute(
             select(ObjectType).where(ObjectType.domain == domain, ObjectType.name == name)
+        )
+        return result.scalar_one_or_none()
+
+    async def get_type_by_name_ci(self, domain: str, name: str) -> Optional[ObjectType]:
+        """大小写不敏感匹配（MCP 工具名 lower 后回查）"""
+        result = await self.session.execute(
+            select(ObjectType).where(
+                func.lower(ObjectType.domain) == domain.lower(),
+                func.lower(ObjectType.name) == name.lower(),
+            )
         )
         return result.scalar_one_or_none()
 
