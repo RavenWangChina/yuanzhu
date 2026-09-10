@@ -1,6 +1,5 @@
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 from sqlalchemy.orm import declarative_base
-from contextlib import asynccontextmanager
 
 from yuanzhu.config import settings
 
@@ -19,9 +18,8 @@ async_session_factory = async_sessionmaker(
 )
 
 
-@asynccontextmanager
 async def get_db():
-    """获取数据库会话的异步上下文管理器（FastAPI Depends 兼容）"""
+    """FastAPI 依赖：async generator（yield 依赖，非 asynccontextmanager）"""
     async with async_session_factory() as session:
         try:
             yield session
