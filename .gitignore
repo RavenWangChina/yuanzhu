@@ -2,4 +2,3 @@
 __pycache__/
 .pytest_cache/
 # 私有备忘不入库
-docs/内部备忘.md
