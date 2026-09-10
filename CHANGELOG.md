@@ -12,6 +12,12 @@
 - 仓库规范化：README、CHANGELOG、ROADMAP、目录结构（server/cli/edge/web/templates/deploy/plugins 骨架）
 - 致谢修正：DeepSeek 归属深度求索；战略评审人明确为周志明先生
 
+### Added（2026-09-10 · 后续流程三件套，126 测试全绿）
+- **H2 模拟真人测试**（Playwright 按任务卡行为模型全流程模拟，判定通过）+ 卡点修复：待审参数 JSON 原文→中文键名+长文本块（报告全文可读）；动作友好描述（action_description）；去「Report 对象」术语；报告归档 docs/test-reports/h2-2026-09-10-simulated/
+- **Bearer 认证中间件**（审查 I5 收口）：YUANZHU_API_TOKEN 非空即启用；/health 与 Web 壳豁免；API/MCP 全拦；CLI 自动携带、Web 401 弹输入存 localStorage；本机模式零摩擦
+- **对话学习降级路径**（spec 3.3 预案，企微挂起期数据先行）：聊天记录文本导入（企微/微信导出格式解析+噪音过滤）→ 同一提炼管线 → 草稿区；CLI `yuanzhu import <file> --refine`；**真实链路实证**：11 条记录 → GLM 提炼 2 个精准候选（测试日报汇总/报错排查协助，协同层标注）
+- 提炼 job 默认模型 glm-5.1（多协议改造对齐）
+
 ### Added（2026-09-10 · 模型网关多协议兼容改造，117 测试全绿；决策记录 ADR-014）
 - **Provider 注册表**（gateway/providers.py）：三层配置源——①dsh 配置导入（~/.dsh/settings.yaml 的 providers + credentials refs 解 key，dsh 用户**零配置复用**）②.env 自定义（YUANZHU_PROVIDER_n_{NAME,BASE_URL,API,KEY,MODELS}）③内置兜底（deepseek 等 litellm 原生）
 - **多协议映射**：openai-completions → litellm openai/ 前缀+api_base+api_key（一切 OpenAI 兼容端点：天翼云/vLLM/Ollama/one-api）；anthropic-messages 预留

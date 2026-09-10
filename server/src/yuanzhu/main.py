@@ -28,6 +28,42 @@ app = FastAPI(
 )
 
 app.include_router(mcp_router)
+
+
+# ---------- Bearer 认证（审查 I5；未配 token=零摩擦本机模式） ----------
+_auth_singleton = None
+
+from fastapi import Request as _Request
+from fastapi.responses import JSONResponse as _JSONResponse
+
+
+@app.middleware("http")
+async def bearer_auth(request: _Request, call_next):
+    from yuanzhu.config import settings as _s
+    global _auth_singleton
+    if _auth_singleton is None:
+        _auth_singleton = bool(_s.api_token)
+    if not _auth_singleton:
+        return await call_next(request)
+
+    path = request.url.path
+    exempt = (
+        path == "/health"
+        or path.startswith("/assets/")
+        or (path in ("", "/") or (not path.startswith("/api") and not path.startswith("/v1")
+                                  and not path.startswith("/mcp") and "." not in path.rsplit("/", 1)[-1]))
+    )
+    if exempt:
+        return await call_next(request)
+
+    auth = request.headers.get("Authorization", "")
+    if auth == f"Bearer {_s.api_token}":
+        return await call_next(request)
+    return _JSONResponse(
+        status_code=401,
+        content={"detail": "未授权：需要 Authorization: Bearer <token>（服务端已启用认证）"},
+    )
+
 app.include_router(objects_router)
 app.include_router(actions_router)
 app.include_router(staged_router)

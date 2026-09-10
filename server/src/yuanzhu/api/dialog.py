@@ -61,6 +61,31 @@ async def wecom_receive(request: Request):
     return {"ok": True, "buffered": len(message_buffer)}
 
 
+class ImportRequest(BaseModel):
+    text: str
+    group_name: str = "导入会话"
+
+
+@router.post("/import")
+async def import_chat(body: ImportRequest):
+    """降级路径：聊天记录文本导入（企微/微信导出格式）→ 内存缓冲。
+
+    与企微回调同构——后续 refine 走同一管线。原文不落库。
+    """
+    if not body.text.strip():
+        raise HTTPException(status_code=400, detail="导入内容为空")
+
+    from yuanzhu.dialog.importer import parse_chat_text
+    from yuanzhu.dialog.buffer import message_buffer
+    messages, skipped = parse_chat_text(body.text, chat_name=body.group_name, return_skipped=True)
+    if not messages:
+        raise HTTPException(status_code=400, detail="未解析到任何消息（需「时间 说话人」+内容行格式）")
+    for m in messages:
+        message_buffer.push(m)
+    return {"imported": len(messages), "skipped_noise": skipped,
+            "buffered": len(message_buffer)}
+
+
 class RefineRequest(BaseModel):
     min_messages: int = Field(default=3, ge=1)
     sample_size: int = Field(default=100, ge=1, le=2000)

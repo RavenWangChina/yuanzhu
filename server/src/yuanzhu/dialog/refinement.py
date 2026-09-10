@@ -26,7 +26,7 @@ layer 只能填「协同层」（诚实边界：对话学习预期承载协同�
 只输出 JSON 数组，不要其他文字。提炼不出就输出 []。"""
 
 
-async def call_model(prompt: str, model: str = "deepseek-chat", session=None) -> str:
+async def call_model(prompt: str, model: str = "glm-5.1", session=None) -> str:
     """经模型网关调用（测试被 monkeypatch 替换；session 透传做计量 I4）"""
     from yuanzhu.workflow.engine import call_model as _call
     return await _call(model, prompt, session=session, caller="dialog-refine")

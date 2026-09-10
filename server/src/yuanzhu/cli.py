@@ -20,8 +20,9 @@ from yuanzhu.config import settings
 
 @contextlib.asynccontextmanager
 async def make_client():
-    """默认连本机中控（YUANZHU_BASE_URL 可覆盖）"""
-    async with httpx.AsyncClient(base_url=settings.base_url, timeout=30) as client:
+    """默认连本机中控（YUANZHU_BASE_URL 可覆盖；配了 api_token 自动携带）"""
+    headers = {"Authorization": f"Bearer {settings.api_token}"} if settings.api_token else {}
+    async with httpx.AsyncClient(base_url=settings.base_url, timeout=30, headers=headers) as client:
         yield client
 
 
@@ -174,6 +175,29 @@ async def cmd_run(client, args, ctx):
         ctx.print("  → yuanzhu pending 查看 / yuanzhu approve <id> 审批")
 
 
+async def cmd_import(client, args, ctx):
+    from pathlib import Path as _P
+    path = _P(args.file)
+    if not path.is_file():
+        ctx.print(f"✗ 文件不存在: {args.file}")
+        ctx.exit_code = 1
+        return
+    text = path.read_text(encoding="utf-8", errors="replace")
+    resp = await _post(client, "/api/dialog/import", {
+        "text": text, "group_name": args.group,
+    }, ctx)
+    if ctx.exit_code:
+        return
+    d = resp.json()
+    ctx.print(f"✓ 导入 {d['imported']} 条（噪音跳过 {d['skipped_noise']}）")
+    if args.refine:
+        r2 = await _post(client, "/api/dialog/refine", {"min_messages": 3}, ctx)
+        if ctx.exit_code == 0 and r2.json()["candidates"]:
+            ctx.print(f"✓ 提炼出 {r2.json()['candidates']} 个候选 → 模板市场草稿区")
+        else:
+            ctx.print("（未提炼出候选——样本可能不足或无高频模式）")
+
+
 async def cmd_mcp_tools(client, args, ctx):
     resp = await _post(client, "/mcp", {"method": "tools/list", "params": {}}, ctx)
     if ctx.exit_code:
@@ -216,6 +240,11 @@ def build_parser() -> argparse.ArgumentParser:
     run.add_argument("workflow")
     run.add_argument("--param", nargs="*", default=[], metavar="k=v", help="工作流参数")
 
+    imp = sub.add_parser("import", help="导入聊天记录文件（企微/微信导出 txt）")
+    imp.add_argument("file", help="聊天记录文本文件路径")
+    imp.add_argument("--group", default="导入会话", help="群/会话名")
+    imp.add_argument("--refine", action="store_true", help="导入后立即提炼")
+
     mcp = sub.add_parser("mcp", help="MCP 工具")
     mcp_sub = mcp.add_subparsers(dest="mcp_cmd", required=True)
     mcp_sub.add_parser("tools", help="列出 MCP 工具")
@@ -226,7 +255,7 @@ def build_parser() -> argparse.ArgumentParser:
 HANDLERS = {
     "status": cmd_status, "query": cmd_query, "pending": cmd_pending,
     "approve": cmd_approve, "reject": cmd_reject, "templates": cmd_templates,
-    "run": cmd_run, "mcp": cmd_mcp_tools,
+    "run": cmd_run, "mcp": cmd_mcp_tools, "import": cmd_import,
 }
 
 
