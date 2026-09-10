@@ -68,3 +68,14 @@ def apply_transform(
             raise ValueError(f"transform 目标必须在 properties 下: {target}")
 
     return new_props
+
+
+def resolve_with_value(spec: str, params: Dict[str, Any]) -> Any:
+    """create_object 的 with 值解析：from:params.x / literal:v / 裸值"""
+    if not isinstance(spec, str):
+        return spec
+    if spec.startswith("from:params."):
+        return _dig(params, spec[len("from:params."):])
+    if spec.startswith("literal:"):
+        return spec[len("literal:"):]
+    return spec

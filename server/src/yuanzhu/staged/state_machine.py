@@ -72,6 +72,20 @@ class StagedStateMachine:
             if found:
                 return found
 
+        # 3.5 create_object 类型前置校验（fail fast，不留到 apply）
+        from yuanzhu.ontology.object_store import ObjectStore as _OS
+        if action_type.transform_json:
+            for rule in action_type.transform_json:
+                if "create_object" in rule:
+                    spec = rule["create_object"]
+                    exists = await _OS(self.session).get_type_by_name(
+                        spec.get("domain") or action_type.domain, spec.get("type")
+                    )
+                    if not exists:
+                        raise ValueError(
+                            f"create_object 类型不存在: {spec.get('domain') or action_type.domain}/{spec.get('type')}"
+                        )
+
         # 4. before 快照（审批上下文：谁/为什么/影响哪些对象的原值）
         exec = ActionExec(
             action_type_id=action_type_id,
