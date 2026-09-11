@@ -1,6 +1,6 @@
 [project]
 name = "yuanzhu"
-version = "0.2.0"
+version = "0.1.2"
 description = "元铸工坊中控服务（本体层 + MCP + 编排）"
 requires-python = ">=3.11"
 dependencies = [
