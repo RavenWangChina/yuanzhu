@@ -4,7 +4,7 @@
 
 **按企业自身的工作习惯，把各领域的最佳实践定向复刻成 AI 工作流资产——像软件一样被开发、分发、使用、沉淀、进化，全员开箱即用。**
 
-## 当前状态：v0.1.2 已交付（技术验证期；PyPI 分发）
+## 当前状态：v0.1.2 已上架 [PyPI](https://pypi.org/project/yuanzhu/)（技术验证期）
 
 八里程碑全部完成（2026-09-10，104 测试全绿）：本体层（对象/链接/动作+staged writes 状态机）、MCP 暴露、中控骨架（节点/任务/模板/LiteLLM 网关）、Web 控制台 4 页、AIQA 四段式首发模板、工作流执行引擎、对话学习采集服务端、H2 真人测试场景包。
 
@@ -14,8 +14,7 @@
 
 ```bash
 # 一键启动（Python 3.11+；pip 包含 Web 控制台与全部内置模板）
-pip install yuanzhu            # PyPI 上架后；当前可先用：
-pip install https://github.com/RavenWangChina/yuanzhu/releases/download/v0.1.2/yuanzhu-0.1.2-py3-none-any.whl
+pip install yuanzhu
 yuanzhu-server                 # 打开 http://127.0.0.1:8600
 ```
 
