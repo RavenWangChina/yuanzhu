@@ -1,26 +1,34 @@
-# server —— 中控服务（模块化单体）
+# 元铸工坊 yuanzhu
 
-元铸工坊中控：本体层 + staged writes 状态机 + MCP + 模板库 + 任务编排 + 模型网关 + Web 托管。
+**把最佳实践铸成可治理的 AI 工作流资产——AI 提议，人拍板。**
 
-## 运行
+一台独立运行的引擎（本体层 + 模板 + 工作流 + 审批），三种用法：
+
+- **深度问答**：问一个问题自动走六步流水线（澄清→双视角并行作答→独立审查→综合裁决→人审采纳）
+- **一句话铸模板**：描述你的日常工作，AI 生成完整工作流模板，评测自动守门
+- **agent 接入**：Claude Code 等经 MCP 直连（`claude mcp add yuanzhu http://127.0.0.1:8600/mcp`）
+
+## 安装与启动
 
 ```bash
-python -m venv .venv
-.venv/Scripts/pip install -e ".[dev]"
-.venv/Scripts/python -m pytest tests/          # 104 个测试
-.venv/Scripts/python -m uvicorn yuanzhu.main:app --port 8600
+pip install yuanzhu
+yuanzhu-server          # 打开 http://127.0.0.1:8600
 ```
 
-- Web 控制台：http://127.0.0.1:8600 （静态产物由 web/ 构建，已随仓）
-- MCP 端点：`POST /mcp`（tools/list | tools/call）
-- 模型接入**零配置**：自动导入 dsh 已配 provider（ADR-014，OpenAI 兼容协议全家桶）；自定义端点用 `YUANZHU_PROVIDER_n_*` 环境变量
-- 企微配置（挂起中）见 [docs/对话学习企微接入指南.md](../docs/对话学习企微接入指南.md)
-- H2 测试种子：`python seed_h2.py`
+首启自动注册内置模板（深度问答/AIQA 测试/会议追踪），零配置可用。
+CLI 同装：`yuanzhu status / pending / templates / forge "你的工作描述"`。
 
-## 结构
+模型接入：自动读取 dsh 已配 provider；或用环境变量接任意 OpenAI 兼容端点
+（`YUANZHU_PROVIDER_n_{NAME,BASE_URL,API,KEY,MODELS}`）。
 
-- `src/yuanzhu/db/` 模型与连接；`ontology/` 对象/链接/动作存储与 DSL 解析
-- `staged/` 状态机+criteria 校验+transform 引擎+执行器/补偿器
-- `mcp/` 工具生成与请求分发；`api/` REST 端点；`template/` 四段式注册
-- `workflow/` 执行引擎；`evals/` 评测执行器；`dialog/` 对话学习（缓冲+提炼）
-- `gateway/` LiteLLM 网关与计量；`node/` `task/` 编排
+## 核心概念
+
+| 概念 | 一句话 |
+|------|--------|
+| 本体层 | 你的业务对象（名词）+ 受治理的动作（动词）——业务世界的数字孪生 |
+| staged writes | AI 的所有写操作先进待审区，人批准才生效 |
+| 四段式模板 | 对象模型+动作库+工作流+评测集——可安装的"专家经验" |
+
+## 许可
+
+AGPL-3.0。文档与源码：<https://github.com/RavenWangChina/yuanzhu>

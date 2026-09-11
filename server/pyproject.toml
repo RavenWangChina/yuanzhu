@@ -1,8 +1,22 @@
 [project]
 name = "yuanzhu"
 version = "0.1.2"
-description = "元铸工坊中控服务（本体层 + MCP + 编排）"
+description = "元铸工坊 SOSOFAST——把最佳实践铸成可治理的 AI 工作流资产（AI 提议，人拍板）"
+readme = "README.md"
+license = { text = "AGPL-3.0" }
+authors = [{ name = "MiaoYu" }]
+keywords = ["ai-workflow", "agent", "ontology", "mcp", "staged-writes", "llm"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: GNU Affero General Public License v3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Office/Business",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
 requires-python = ">=3.11"
+
 dependencies = [
     "fastapi>=0.109.0",
     "uvicorn[standard]>=0.27.0",
@@ -14,6 +28,11 @@ dependencies = [
     "jsonschema>=4.21.1",
     "litellm>=1.40.0",
 ]
+
+[project.urls]
+Homepage = "https://github.com/RavenWangChina/yuanzhu"
+Documentation = "https://github.com/RavenWangChina/yuanzhu/tree/main/docs"
+Issues = "https://github.com/RavenWangChina/yuanzhu/issues"
 
 [project.optional-dependencies]
 dev = [

@@ -14,7 +14,8 @@
 
 ```bash
 # 一键启动（Python 3.11+；pip 包含 Web 控制台与全部内置模板）
-pip install yuanzhu
+pip install yuanzhu            # PyPI 上架后；当前可先用：
+pip install https://github.com/RavenWangChina/yuanzhu/releases/download/v0.1.2/yuanzhu-0.1.2-py3-none-any.whl
 yuanzhu-server                 # 打开 http://127.0.0.1:8600
 ```
 
