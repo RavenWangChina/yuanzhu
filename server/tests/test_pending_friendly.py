@@ -7,7 +7,7 @@ from yuanzhu.main import app
 from yuanzhu.db.database import get_db
 from yuanzhu.template.store import TemplateStore
 
-AIQA_DIR = Path(__file__).resolve().parents[2] / "templates" / "aiqa"
+AIQA_DIR = Path(__import__("yuanzhu.__init__", fromlist=["__file__"]).__file__).parent / "templates" / "aiqa"
 
 
 async def test_pending_includes_friendly_description(db_session):

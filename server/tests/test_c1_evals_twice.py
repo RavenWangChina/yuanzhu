@@ -5,7 +5,7 @@ from pathlib import Path
 from yuanzhu.evals.runner import EvalsRunner
 from yuanzhu.template.store import TemplateStore
 
-METAFLOW_DIR = Path(__file__).resolve().parents[2] / "templates" / "metaflow"
+METAFLOW_DIR = Path(__import__("yuanzhu.__init__", fromlist=["__file__"]).__file__).parent / "templates" / "metaflow"
 
 
 async def test_evals_twice_in_same_db(db_session):

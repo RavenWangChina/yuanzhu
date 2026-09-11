@@ -12,7 +12,7 @@ from yuanzhu.template.store import TemplateStore
 
 @pytest.fixture
 async def ptest(db_session):
-    tpl = Path(__file__).resolve().parents[2] / "templates" / "forge" / "_par_test"
+    tpl = Path(__import__("yuanzhu.__init__", fromlist=["__file__"]).__file__).parent / "templates" / "forge" / "_par_test"
     (tpl / "ontology").mkdir(parents=True, exist_ok=True)
     (tpl / "workflows").mkdir(exist_ok=True)
     (tpl / "manifest.yaml").write_text("name: par\nversion: 0.1.0\ndomain: par\n", encoding="utf-8")

@@ -17,7 +17,33 @@ from yuanzhu.api.dialog import router as dialog_router
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     await init_db()
+    await _autoregister_builtin_templates()
     yield
+
+
+async def _autoregister_builtin_templates():
+    """v0.2 首启体验：自动注册包内内置模板（深度问答/AIQA/会议等）——pip 装完零配置可用"""
+    from pathlib import Path as _P
+    import yuanzhu
+    builtin = _P(yuanzhu.__file__).parent / "templates"
+    if not builtin.is_dir():
+        return
+    from yuanzhu.db.database import async_session_factory
+    from yuanzhu.template.store import TemplateStore
+    from yuanzhu.db.models import Template
+    from sqlalchemy import select
+    async with async_session_factory() as session:
+        store = TemplateStore(session)
+        existing = {t.name for t in (await session.execute(select(Template))).scalars().all()}
+        registered = []
+        for tpl_dir in sorted(builtin.iterdir()):
+            if tpl_dir.is_dir() and (tpl_dir / "manifest.yaml").is_file():
+                if tpl_dir.name not in existing:
+                    await store.register_dir(tpl_dir)
+                    registered.append(tpl_dir.name)
+        await session.commit()
+        if registered:
+            print(f"  内置模板已注册: {', '.join(registered)}")
 
 
 app = FastAPI(
@@ -74,7 +100,8 @@ app.include_router(dialog_router)
 
 @app.get("/health")
 async def health():
-    return {"status": "ok", "mode": settings.mode, "version": "0.1.0"}
+    from yuanzhu import __version__
+    return {"status": "ok", "mode": settings.mode, "version": __version__}
 
 
 # ---------- Web 控制台静态托管（ADR-002；构建产物 server/static） ----------
@@ -82,7 +109,7 @@ from pathlib import Path as _Path
 from fastapi.staticfiles import StaticFiles as _StaticFiles
 from fastapi.responses import FileResponse as _FileResponse
 
-_STATIC_DIR = _Path(__file__).resolve().parent.parent.parent / "static"
+_STATIC_DIR = _Path(__file__).resolve().parent / "static"   # v0.2：包内资源（PyPI 分发）
 if _STATIC_DIR.is_dir():
     app.mount("/assets", _StaticFiles(directory=str(_STATIC_DIR / "assets")), name="assets")
 

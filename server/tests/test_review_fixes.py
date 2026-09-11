@@ -12,7 +12,7 @@ from yuanzhu.models.object import ObjectCreate, ObjectTypeCreate
 from yuanzhu.models.action import ActionTypeCreate
 from yuanzhu.db import models
 
-AIQA_DIR = Path(__file__).resolve().parents[2] / "templates" / "aiqa"
+AIQA_DIR = Path(__import__("yuanzhu.__init__", fromlist=["__file__"]).__file__).parent / "templates" / "aiqa"
 
 
 async def _make_bug(db_session, sample_object_type, title="X", priority=1, status="Open"):

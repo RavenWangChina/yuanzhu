@@ -5,14 +5,14 @@ from pathlib import Path
 from yuanzhu.workflow.engine import WorkflowEngine
 from yuanzhu.template.store import TemplateStore
 
-AIQA_DIR = Path(__file__).resolve().parents[2] / "templates" / "aiqa"
+AIQA_DIR = Path(__import__("yuanzhu.__init__", fromlist=["__file__"]).__file__).parent / "templates" / "aiqa"
 
 
 @pytest.fixture
 async def domain(db_session):
     """注册一个含 prompt_vars 的工作域（用临时模板写在 forge 目录）"""
     import yaml
-    tpl = Path(__file__).resolve().parents[2] / "templates" / "forge" / "_pv_test"
+    tpl = Path(__import__("yuanzhu.__init__", fromlist=["__file__"]).__file__).parent / "templates" / "forge" / "_pv_test"
     (tpl / "ontology").mkdir(parents=True, exist_ok=True)
     (tpl / "workflows").mkdir(exist_ok=True)
     (tpl / "manifest.yaml").write_text(

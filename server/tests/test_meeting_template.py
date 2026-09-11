@@ -8,7 +8,7 @@ from yuanzhu.ontology.object_store import ObjectStore
 from yuanzhu.workflow.engine import WorkflowEngine
 from yuanzhu.staged.state_machine import StagedStateMachine
 
-MEETING_DIR = Path(__file__).resolve().parents[2] / "templates" / "meeting"
+MEETING_DIR = Path(__import__("yuanzhu.__init__", fromlist=["__file__"]).__file__).parent / "templates" / "meeting"
 
 
 @pytest.fixture

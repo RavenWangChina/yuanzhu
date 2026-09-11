@@ -1,6 +1,6 @@
 [project]
-name = "yuanzhu-server"
-version = "0.1.0"
+name = "yuanzhu"
+version = "0.2.0"
 description = "元铸工坊中控服务（本体层 + MCP + 编排）"
 requires-python = ">=3.11"
 dependencies = [
@@ -24,6 +24,7 @@ dev = [
 
 [project.scripts]
 yuanzhu = "yuanzhu.cli:main"
+yuanzhu-server = "yuanzhu.server_main:main"
 
 [build-system]
 requires = ["hatchling"]

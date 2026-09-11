@@ -88,8 +88,11 @@ class TemplateRegisterRequest(BaseModel):
     path: str  # v0.1 本地目录注册；zip 上传留后续里程碑
 
 
-# I3 修复：模板注册根白名单（防任意目录注册 → 动作注入 + MCP 执行面）
-TEMPLATE_ROOTS = [Path(__file__).resolve().parents[4] / "templates"]
+# 模板注册根白名单（I3 防注入；v0.2：包内内置模板 + 用户目录 forge 产物）
+from pathlib import Path as _PP
+_TEMPLATE_BUILTIN = _PP(__file__).resolve().parents[1] / "templates"          # src/yuanzhu/templates
+_TEMPLATE_USER = _PP.home() / ".yuanzhu" / "templates"
+TEMPLATE_ROOTS = [_TEMPLATE_BUILTIN, _TEMPLATE_USER]
 
 
 @router.post("/templates/register")

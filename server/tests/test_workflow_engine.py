@@ -9,7 +9,7 @@ from yuanzhu.workflow.engine import WorkflowEngine
 from yuanzhu.template.store import TemplateStore
 from yuanzhu.ontology.object_store import ObjectStore
 
-AIQA_DIR = Path(__file__).resolve().parents[2] / "templates" / "aiqa"
+AIQA_DIR = Path(__import__("yuanzhu.__init__", fromlist=["__file__"]).__file__).parent / "templates" / "aiqa"
 
 
 @pytest.fixture

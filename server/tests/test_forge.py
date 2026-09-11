@@ -5,7 +5,7 @@ from pathlib import Path
 from yuanzhu.template.forge import forge_template
 from yuanzhu.template.store import TemplateStore
 
-FORGE_ROOT = Path(__file__).resolve().parents[2] / "templates" / "forge"
+from yuanzhu.template.forge import FORGE_ROOT   # v0.2：用户目录（单一真源）
 
 
 @pytest.fixture(autouse=True)

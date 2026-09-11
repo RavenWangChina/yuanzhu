@@ -6,7 +6,7 @@ from yuanzhu.gateway.proxy import build_usage_record
 from yuanzhu.evals.runner import EvalsRunner
 from yuanzhu.template.store import TemplateStore
 
-METAFLOW_DIR = Path(__file__).resolve().parents[2] / "templates" / "metaflow"
+METAFLOW_DIR = Path(__import__("yuanzhu.__init__", fromlist=["__file__"]).__file__).parent / "templates" / "metaflow"
 
 
 def test_t2_cost_computed():

@@ -10,7 +10,10 @@ from typing import Any, Dict, List
 
 import yaml
 
-FORGE_ROOT = Path(__file__).resolve().parents[4] / "templates" / "forge"
+# v0.2：forge 产物写用户数据目录（site-packages 不可写）；包内 templates 只读
+from pathlib import Path as _P
+USER_TEMPLATES = _P.home() / ".yuanzhu" / "templates"
+FORGE_ROOT = USER_TEMPLATES / "forge"
 
 # 稳定前缀：四段式生成规范（few-shot 片段取自真实模板）
 FORGE_PROMPT_PREFIX = """你是工作流模板架构师。把用户描述的工作场景铸成"四段式模板"。

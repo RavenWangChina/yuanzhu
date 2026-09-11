@@ -4,7 +4,7 @@
 
 **按企业自身的工作习惯，把各领域的最佳实践定向复刻成 AI 工作流资产——像软件一样被开发、分发、使用、沉淀、进化，全员开箱即用。**
 
-## 当前状态：v0.1 已交付（技术验证期）
+## 当前状态：v0.2 已交付（技术验证期；PyPI 分发）
 
 八里程碑全部完成（2026-09-10，104 测试全绿）：本体层（对象/链接/动作+staged writes 状态机）、MCP 暴露、中控骨架（节点/任务/模板/LiteLLM 网关）、Web 控制台 4 页、AIQA 四段式首发模板、工作流执行引擎、对话学习采集服务端、H2 真人测试场景包。
 
@@ -13,21 +13,22 @@
 ### 快速开始（单机模式）
 
 ```bash
-# 中控服务（含 Web 控制台，Python 3.11+）
-cd server
-python -m venv .venv && .venv/Scripts/pip install -e ".[dev]"
-.venv/Scripts/python -m uvicorn yuanzhu.main:app --port 8600
-# 打开 http://127.0.0.1:8600 （待审中心/模板市场/节点拓扑/用量审计）
-
-# CLI（开发者第一界面）
-yuanzhu status && yuanzhu pending && yuanzhu templates
-
-# 跑测试
-.venv/Scripts/python -m pytest tests/
-
-# 注册首发模板 + 造 H2 测试数据
-.venv/Scripts/python seed_h2.py
+# 一键启动（Python 3.11+；pip 包含 Web 控制台与全部内置模板）
+pip install yuanzhu
+yuanzhu-server                 # 打开 http://127.0.0.1:8600
 ```
+
+首启自动注册内置模板（深度问答/AIQA 测试/会议追踪）；CLI 同装：`yuanzhu status / pending / templates / forge`。
+
+<details><summary>从源码运行（开发者）</summary>
+
+```bash
+git clone https://github.com/RavenWangChina/yuanzhu.git
+cd yuanzhu/server
+python -m venv .venv && .venv/Scripts/pip install -e ".[dev]"
+.venv/Scripts/yuanzhu-server           # 或 python -m pytest tests/ 跑 142 个测试
+```
+</details>
 
 Web 控制台前端源码在 `web/`（Vite+Vue3，构建产物由 FastAPI 托管）；模型接入零配置：网关自动导入 dsh 已配的 provider（天翼云等，OpenAI 兼容协议全家桶）；自定义端点用 `YUANZHU_PROVIDER_n_*` 环境变量；估费价目用 `YUANZHU_MODEL_PRICES`（JSON）。
 

@@ -25,7 +25,7 @@ def get(path):
 
 def main():
     from pathlib import Path
-    template_dir = Path(__file__).resolve().parent.parent / "templates" / "aiqa"
+    import yuanzhu; template_dir = Path(yuanzhu.__file__).parent / "templates" / "aiqa"
 
     # 1. 注册 AIQA 模板
     tpl = post("/api/templates/register", {"path": str(template_dir)})

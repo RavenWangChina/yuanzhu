@@ -7,7 +7,7 @@ from yuanzhu.template.store import TemplateStore
 from yuanzhu.workflow.engine import WorkflowEngine
 from yuanzhu.staged.state_machine import StagedStateMachine
 
-METAFLOW_DIR = Path(__file__).resolve().parents[2] / "templates" / "metaflow"
+METAFLOW_DIR = Path(__import__("yuanzhu.__init__", fromlist=["__file__"]).__file__).parent / "templates" / "metaflow"
 
 
 @pytest.fixture

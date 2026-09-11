@@ -9,7 +9,7 @@ from yuanzhu.ontology.object_store import ObjectStore
 from yuanzhu.ontology.action_store import ActionStore
 from yuanzhu.ontology.link_store import LinkStore
 
-AIQA_DIR = Path(__file__).resolve().parents[2] / "templates" / "aiqa"
+AIQA_DIR = Path(__import__("yuanzhu.__init__", fromlist=["__file__"]).__file__).parent / "templates" / "aiqa"
 
 
 def test_aiqa_template_parses():

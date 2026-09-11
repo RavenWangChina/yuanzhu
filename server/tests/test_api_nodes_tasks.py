@@ -90,7 +90,8 @@ async def test_task_list_and_detail(client):
 async def test_template_register_and_list(client, tmp_path):
     """模板注册 API（白名单根下的临时目录；zip 上传留后续）"""
     import shutil
-    tpl_root = Path(__file__).resolve().parents[2] / "templates" / "_test_tmp"
+    from yuanzhu.template.forge import USER_TEMPLATES
+    tpl_root = USER_TEMPLATES / "_test_tmp"
     tpl_root.mkdir(parents=True, exist_ok=True)
     try:
         (tpl_root / "manifest.yaml").write_text(
