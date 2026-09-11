@@ -2,6 +2,17 @@
 
 本项目所有显著变更记录于此。格式参照 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，版本遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [0.1.2] · 2026-09-11
+
+> **已上架 PyPI**：<https://pypi.org/project/yuanzhu/>——`pip install yuanzhu` 即装即用
+> GitHub Release：https://github.com/RavenWangChina/yuanzhu/releases/tag/v0.1.2（附 wheel）
+
+### Added（PyPI 分发 + 一键启动，142 测试全绿）
+- **pip 包**：`pip install yuanzhu` → `yuanzhu-server` 一键启动（静态资源/内置模板全打进 wheel）
+- **首启零配置**：自动建库 + 自动注册内置模板（metaflow/meeting/aiqa）——装完即问即用
+- **forge 产物迁移用户目录**：`~/.yuanzhu/templates/forge/`（site-packages 不可写）；模板注册白名单=包内+用户目录
+- PyPI 元数据（classifiers/keywords/urls/PyPI 专用 README）；版本 0.2.0→0.1.2 回调（版本号由用户裁决）；干净 venv 安装冒烟全通
+
 ## [0.1.1] · 2026-09-11
 
 ### Added（打磨版 + 并行 agent，142 测试全绿）
