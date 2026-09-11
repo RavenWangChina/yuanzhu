@@ -1,0 +1,19 @@
+# 开发域评测
+cases:
+  - name: 创建任务-人审后入库
+    steps:
+      - action: CreateDevTask
+        params: {goal: eval-测试任务, acceptance: 验证通过}
+        expect: {status: staged}
+      - approve: {}
+    expect:
+      status: applied
+      object_exists: {type: DevTask, goal: eval-测试任务}
+
+  - name: 记录决策-自动入库
+    steps:
+      - action: LogDecision
+        params: {question: eval-测试问题, conclusion: eval-测试结论, confidence: high}
+    expect:
+      status: applied
+      object_exists: {type: Decision, question: eval-测试问题}

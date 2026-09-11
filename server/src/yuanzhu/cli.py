@@ -22,7 +22,7 @@ from yuanzhu.config import settings
 async def make_client():
     """默认连本机中控（YUANZHU_BASE_URL 可覆盖；配了 api_token 自动携带）"""
     headers = {"Authorization": f"Bearer {settings.api_token}"} if settings.api_token else {}
-    async with httpx.AsyncClient(base_url=settings.base_url, timeout=120, headers=headers) as client:  # forge 类长操作
+    async with httpx.AsyncClient(base_url=settings.base_url, timeout=300, headers=headers) as client:  # forge 类长操作
         yield client
 
 

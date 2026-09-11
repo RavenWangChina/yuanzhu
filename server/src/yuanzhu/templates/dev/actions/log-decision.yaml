@@ -1,0 +1,22 @@
+# 记录技术决策（L1 自动——append-only，决策来源是 deep-answer 或人）
+name: LogDecision
+description_for_agent: 记录一条技术决策。append-only，不可修改。决策来源可以是 deep-answer 的产出或人工判断。
+autonomy_level: 1
+requires_staging: false
+idempotency_key_template: "decision-{question}"
+params:
+  type: object
+  properties:
+    question: {type: string}
+    conclusion: {type: string}
+    confidence: {type: string}
+    source: {type: string}
+  required: [question, conclusion]
+transform:
+  - create_object:
+      type: Decision
+    with:
+      question: from:params.question
+      conclusion: from:params.conclusion
+      confidence: from:params.confidence
+      source: from:params.source

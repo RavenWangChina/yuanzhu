@@ -1,0 +1,22 @@
+# 创建开发任务（staged——用户确认理解后再开工）
+name: CreateDevTask
+description_for_agent: 创建一个开发任务。必须包含 goal（目标）和 acceptance（验收标准）。AI 的理解描述在 intent_understanding 字段。
+autonomy_level: 2
+requires_staging: true
+idempotency_key_template: "task-{goal}"
+params:
+  type: object
+  properties:
+    goal: {type: string}
+    intent_understanding: {type: string}
+    acceptance: {type: string}
+  required: [goal, acceptance]
+transform:
+  - create_object:
+      type: DevTask
+    with:
+      goal: from:params.goal
+      intent_understanding: from:params.intent_understanding
+      acceptance: from:params.acceptance
+      status: literal:draft
+      created_by: from:params.created_by

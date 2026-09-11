@@ -1,0 +1,23 @@
+# 开发域对象——D0 复盘结论：意图鸿沟 2/3，所以核心是"开工前确认理解"
+types:
+  - name: DevTask
+    title_key: goal
+    description: 开发任务（含意图确认门——AI 开工前必须先描述理解，用户确认后才动手）
+    exposed: true
+    properties:
+      goal: {type: string, required: true}
+      intent_understanding: {type: string, description: "AI 的理解——'我理解你要的是...'"}
+      acceptance: {type: string, required: true, description: 验收标准——怎么算做对了}
+      status: {type: string, enum: [draft, intent_confirmed, in_progress, review, done], default: draft}
+      evidence: {type: string, description: 完成证据——测试输出/截图链接}
+      created_by: {type: string}
+
+  - name: Decision
+    title_key: question
+    description: 技术决策记录（append-only，不可修改——元铸工坊 deep-answer 的产出落点）
+    exposed: true
+    properties:
+      question: {type: string, required: true}
+      conclusion: {type: string, required: true}
+      confidence: {type: string, enum: [high, medium, low]}
+      source: {type: string, description: 决策来源（deep-answer/human/external）}

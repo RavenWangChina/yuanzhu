@@ -1,0 +1,16 @@
+# 确认意图对齐（L1 自动——用户自己操作，不需要审批）
+name: ConfirmIntent
+description_for_agent: 用户确认 AI 的意图理解正确（状态从 draft 变为 intent_confirmed）
+autonomy_level: 1
+requires_staging: false
+params:
+  type: object
+  properties:
+    object_id: {type: integer}
+  required: [object_id]
+submission_criteria:
+  object_ref: params.object_id
+  check: {properties.status: draft}
+transform:
+  - set: properties.status
+    value: intent_confirmed

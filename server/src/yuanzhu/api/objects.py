@@ -39,7 +39,7 @@ async def get_object(obj_id: int, db: AsyncSession = Depends(get_db)):
     return obj
 
 
-@router.get("", response_model=List[ObjectResponse])
+@router.get("")
 async def list_objects(
     domain: Optional[str] = None,
     type_id: Optional[int] = None,
@@ -49,6 +49,26 @@ async def list_objects(
     db: AsyncSession = Depends(get_db),
 ):
     limit = min(max(limit, 1), 500)  # I5：钳制
-    return await ObjectStore(db).list_objects(
+    objects = await ObjectStore(db).list_objects(
         domain=domain, type_id=type_id, created_by=created_by, limit=limit, offset=offset
     )
+    # 填充 object_type 信息（自举发现#1：知识库页面需要类型名）
+    from yuanzhu.db.models import ObjectType as _OT
+    type_map = {}
+    for o in objects:
+        if o.type_id not in type_map:
+            type_map[o.type_id] = await db.get(_OT, o.type_id)
+    result = []
+    for o in objects:
+        obj_dict = {
+            "id": o.id, "type_id": o.type_id,
+            "properties": o.properties_json or {},
+            "title": o.title, "created_by": o.created_by,
+            "created_at": o.created_at, "updated_at": o.updated_at,
+            "object_type": {
+                "name": type_map[o.type_id].name if type_map.get(o.type_id) else None,
+                "domain": type_map[o.type_id].domain if type_map.get(o.type_id) else None,
+            } if type_map.get(o.type_id) else None,
+        }
+        result.append(obj_dict)
+    return result

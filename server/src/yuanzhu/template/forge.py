@@ -107,11 +107,18 @@ async def forge_template(session, description: str) -> Dict[str, Any]:
 
 
 async def reload_template(session, name: str) -> dict:
-    """T6 草稿转正：重读 templates/forge/<name>/ 目录（人工修正后）
-    → 重注册（保持 draft）→ 重跑 evals 守门 → 全过升级 published。"""
+    """T6 草稿转正：重读模板目录（人工修正后）
+    → 重注册（保持 draft）→ 重跑 evals 守门 → 全过升级 published。
+    同时支持 forge 目录和内置 templates 目录（自举发现#3）。"""
     tpl_dir = FORGE_ROOT / name
     if not (tpl_dir / "manifest.yaml").is_file():
-        raise ValueError(f"模板目录不存在: {tpl_dir}")
+        # 也查内置模板目录
+        import yuanzhu as _yz
+        builtin = Path(_yz.__file__).parent / "templates" / name
+        if (builtin / "manifest.yaml").is_file():
+            tpl_dir = builtin
+        else:
+            raise ValueError(f"模板目录不存在: {tpl_dir}")
 
     from yuanzhu.template.store import TemplateStore
     from sqlalchemy import select

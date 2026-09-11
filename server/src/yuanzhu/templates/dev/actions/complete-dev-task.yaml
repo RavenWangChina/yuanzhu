@@ -1,0 +1,19 @@
+# 完成任务（staged——用户验证证据后标记完成）
+name: CompleteDevTask
+description_for_agent: 标记开发任务完成。必须附带 evidence（证据——测试输出/截图）。
+autonomy_level: 2
+requires_staging: true
+params:
+  type: object
+  properties:
+    object_id: {type: integer}
+    evidence: {type: string}
+  required: [object_id, evidence]
+submission_criteria:
+  object_ref: params.object_id
+  check: {properties.status: in_progress}
+transform:
+  - set: properties.status
+    value: done
+  - set: properties.evidence
+    from: params.evidence
