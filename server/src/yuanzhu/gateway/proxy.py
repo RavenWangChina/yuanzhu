@@ -40,12 +40,42 @@ def extract_usage(response) -> dict:
 
 def build_usage_record(model: str, usage: dict, task_id, caller: str) -> ModelUsage:
     """计量记录（估费：v0.1 用 litellm 的成本计算，不可得时记 0）"""
-    # ponytail: 估费 v0.1 记 0.0，接入 litellm completion_cost 需响应对象与价目表，挂账里程碑 6
+    # v0.1.1 估费（审查 C2 修正版）：
+    # ①自定义价目表 YUANZHU_MODEL_PRICES（JSON：模型→{"in":元/token,"out":...}）优先
+    #   ——glm 等网关模型不在 litellm 价目内，运维按实际价格配置
+    # ②fallback litellm 本地价目表；③无价/异常记 0（不炸）
+    cost = 0.0
+    try:
+        custom = _custom_prices()
+        if model in custom:
+            cost = (custom[model].get("in", 0) * (usage.get("prompt_tokens") or 0)
+                    + custom[model].get("out", 0) * (usage.get("completion_tokens") or 0))
+        else:
+            import litellm
+            cost = float(litellm.model_cost.get(model, {}).get("input_cost_per_token", 0)
+                         * (usage.get("prompt_tokens") or 0)
+                         + litellm.model_cost.get(model, {}).get("output_cost_per_token", 0)
+                         * (usage.get("completion_tokens") or 0)) or 0.0
+    except Exception:
+        cost = 0.0
     return ModelUsage(
         model=model,
         task_id=task_id,
         caller=caller,
         prompt_tokens=usage.get("prompt_tokens") or 0,
         completion_tokens=usage.get("completion_tokens") or 0,
-        estimated_cost=0.0,
+        estimated_cost=cost,
     )
+
+
+def _custom_prices() -> dict:
+    """读 YUANZHU_MODEL_PRICES 环境变量（JSON，如 {"glm-5.1": {"in": 1e-6, "out": 3e-6}}）"""
+    import json
+    import os
+    raw = os.environ.get("YUANZHU_MODEL_PRICES", "")
+    if not raw:
+        return {}
+    try:
+        return json.loads(raw)
+    except Exception:
+        return {}

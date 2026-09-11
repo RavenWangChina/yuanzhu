@@ -80,25 +80,58 @@ async def forge_template(session, description: str) -> Dict[str, Any]:
 
     from yuanzhu.template.store import TemplateStore
     store = TemplateStore(session)
-    tpl = await store.register_dir(tpl_dir, status="draft")  # 先入草稿
+    tpl = await store.register_dir(tpl_dir, status="draft")  # 先入草稿（硬规则：无守门不上架）
 
-    # evals 守门：全过才上架（AI 铸的模板和人写的一视同仁）
-    from yuanzhu.evals.runner import EvalsRunner
-    domain = template["manifest"]["domain"]
-    report = await EvalsRunner(session).run_template(domain, status="draft")  # 守门对象是刚铸的 draft
-    if report["total"] > 0 and report["failed"] == 0:
-        tpl.status = "published"
-        await session.flush()
-        status = "published"
-    else:
-        status = "draft"
-
+    status, report = await _gate_on_evals(session, tpl)
     return {
         "name": name, "status": status, "directory": str(tpl_dir),
-        "evals": {"total": report["total"], "passed": report["passed"],
-                  "failed": report["failed"],
-                  "failures": [c["name"] for c in report["cases"] if not c["ok"]]},
+        "evals": _report_summary(report),
     }
+
+
+async def reload_template(session, name: str) -> dict:
+    """T6 草稿转正：重读 templates/forge/<name>/ 目录（人工修正后）
+    → 重注册（保持 draft）→ 重跑 evals 守门 → 全过升级 published。"""
+    tpl_dir = FORGE_ROOT / name
+    if not (tpl_dir / "manifest.yaml").is_file():
+        raise ValueError(f"模板目录不存在: {tpl_dir}")
+
+    from yuanzhu.template.store import TemplateStore
+    from sqlalchemy import select
+    from yuanzhu.db.models import Template
+    result = await session.execute(select(Template).where(Template.name == name))
+    existing = result.scalar_one_or_none()
+    version = existing.version if existing else "0.1.0"
+
+    store = TemplateStore(session)
+    tpl = await store.register_dir(tpl_dir, status="draft")  # 审查提示：必须显式 draft，防跳守门
+    status, report = await _gate_on_evals(session, tpl)
+    return {"name": name, "status": status, "directory": str(tpl_dir),
+            "evals": _report_summary(report)}
+
+
+async def _gate_on_evals(session, tpl) -> tuple:
+    """evals 守门（forge/reload 共用）：跑当前域 draft 模板评测，全过升级 published；
+    报告摘要存 manifest_json.last_evals_report（Web 显示失败原因）。"""
+    from yuanzhu.evals.runner import EvalsRunner
+    report = await EvalsRunner(session).run_template(tpl.domain, status="draft")
+
+    if report["total"] > 0 and report["failed"] == 0:
+        tpl.status = "published"
+
+    manifest = dict(tpl.manifest_json or {})
+    manifest["last_evals_report"] = _report_summary(report)
+    tpl.manifest_json = manifest
+    await session.flush()
+
+    status = "published" if tpl.status == "published" else "draft"
+    return status, report
+
+
+def _report_summary(report: dict) -> dict:
+    return {"total": report["total"], "passed": report["passed"],
+            "failed": report["failed"],
+            "failures": [c["name"] for c in report["cases"] if not c["ok"]]}
 
 
 # ---------- 校验与落盘 ----------

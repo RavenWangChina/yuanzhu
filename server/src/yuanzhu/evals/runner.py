@@ -26,6 +26,8 @@ from yuanzhu.staged.state_machine import StagedStateMachine
 
 class EvalsRunner:
     def __init__(self, session: AsyncSession):
+        import uuid
+        self._run_id = uuid.uuid4().hex[:8]   # C1：本次评测运行标识
         self.session = session
         self.engine = WorkflowEngine(session)
         self.object_store = ObjectStore(session)
@@ -52,13 +54,37 @@ class EvalsRunner:
                 results.append({"name": case["name"], "ok": False, "detail": str(e)})
 
         passed = sum(1 for r in results if r["ok"])
-        return {
+        report = {
             "domain": domain,
             "total": len(results),
             "passed": passed,
             "failed": len(results) - passed,
             "cases": results,
         }
+        await self._cleanup_test_objects()
+        return report
+
+    async def _cleanup_test_objects(self) -> int:
+        """评测副作用清理：删掉 eval- 前缀参数创建的对象（exec 审计记录保留）。
+
+        误删防护：只删 params 里 title/question/takeaway 以 eval- 开头的 applied exec
+        所创建的对象（created_object_ids），不按库内值模糊匹配。
+        """
+        from sqlalchemy import select as _sel
+        from yuanzhu.db.models import ActionExec
+        execs = (await self.session.execute(
+            _sel(ActionExec).where(ActionExec.status == "applied"))).scalars().all()
+        removed = 0
+        for e in execs:
+            params = e.params_json or {}
+            key = next((k for k in ("title", "question", "takeaway") if k in params), None)
+            if key and str(params[key]).startswith("eval-"):
+                for oid in (e.exec_log_json or {}).get("created_object_ids", []):
+                    if await self.object_store.delete_object(oid):
+                        removed += 1
+        if removed:
+            await self.session.flush()
+        return removed
 
     # ---------- 单用例 ----------
 
@@ -73,11 +99,15 @@ class EvalsRunner:
                 params = self._resolve_refs(step.get("params") or {}, context)
                 last_action_name = step["action"]
                 try:
+                    # C1 修复：evals 路径幂等键追加 run 标识——避免与真实执行
+                    # （及历史 evals 记录）互相占用幂等键导致第二次跑必挂
+                    idem_suffix = f"#evals-{self._run_id}"
                     last_result = await self.engine.run_action(
                         domain=case.get("_domain", "aiqa"),
                         action_name=step["action"],
                         params=params,
                         run_by="evals-runner",
+                        idempotency_suffix=idem_suffix,
                     )
                     last_error = ""
                     # applied（L1）时立刻可拿到 created_object_ids

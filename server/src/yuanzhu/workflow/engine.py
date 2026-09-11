@@ -56,14 +56,14 @@ class WorkflowEngine:
         self, domain: str, workflow_name: str,
         params: Dict[str, Any], run_by: str,
     ) -> Dict[str, Any]:
-        """顺序执行工作流（v0.1：无并行/无分支——spec 边界）"""
+        """执行工作流（顺序步骤 + parallel 并行组——v0.1.1）"""
         workflow = await self._load_workflow(domain, workflow_name)
 
         context: Dict[str, Any] = {"params": params}
         step_results: Dict[str, Any] = {}
 
         for step in workflow.get("steps", []):
-            step_id = step["id"]
+            step_id = step.get("id")
             step_type = step.get("type")
 
             if step_type == "query_step":
@@ -75,22 +75,53 @@ class WorkflowEngine:
             elif step_type == "action_step":
                 step_results[step_id] = await self._action_step(step, context, run_by)
 
-            else:
-                raise ValueError(f"未知步骤类型: {step_type}（v0.1 支持 action/ai/query）")
+            elif step_type == "parallel" or "parallel" in step:
+                # T5 并行组：组内 asyncio.gather 并发（ai_step 用独立 session 计量——
+                # AsyncSession 非并发安全，主 session 不进组）
+                import asyncio as _aio
+                from yuanzhu.db.database import async_session_factory as _sf
 
-            # 上游输出进上下文（output 名绑定）
-            if step.get("output"):
+                async def _run_one(sub):
+                    sub_id = sub["id"]
+                    try:
+                        if sub.get("type") == "ai_step":
+                            async with _sf() as _ses:
+                                return sub_id, await self._ai_step(sub, context, _ses)
+                        elif sub.get("type") == "query_step":
+                            return sub_id, await self._query_step(sub)
+                        raise ValueError(
+                            f"并行组暂不支持 {sub.get(chr(116)+chr(121)+chr(112)+chr(101))}"
+                            "（v0.1.1 支持 ai/query）")
+                    except Exception as e:
+                        raise ValueError(f"并行步骤 [{sub_id}] 失败: {e}") from e
+
+                results = await _aio.gather(*[_run_one(s) for s in step["parallel"]])
+                for sub_id, res in results:
+                    step_results[sub_id] = res
+
+            else:
+                raise ValueError(f"未知步骤类型: {step_type}（支持 action/ai/query/parallel）")
+
+            # 输出绑定（普通步骤绑自己的 output；并行组子步骤在组内绑）
+            if step.get("output") and step_id in step_results:
                 context[step["output"]] = (
                     step_results[step_id].get("result")
                     if isinstance(step_results[step_id], dict) and "result" in step_results[step_id]
                     else step_results[step_id]
                 )
 
+            if "parallel" in step:  # 子步骤 output 绑定进 context
+                for sub in step["parallel"]:
+                    if sub.get("output") and sub["id"] in step_results:
+                        r = step_results[sub["id"]]
+                        context[sub["output"]] = (
+                            r.get("result") if isinstance(r, dict) and "result" in r else r)
+
         return {"workflow": workflow_name, "steps": step_results}
 
     async def run_action(
         self, domain: str, action_name: str,
-        params: Dict[str, Any], run_by: str,
+        params: Dict[str, Any], run_by: str, idempotency_suffix: str = "",
     ) -> Dict[str, Any]:
         """单动作执行（evals 与外部触发共用；返回状态供断言）"""
         action_type = await self.action_store.get_type_by_name(domain, action_name)
@@ -103,6 +134,8 @@ class WorkflowEngine:
             fmt_vars = {**{"name": action_type.name}, **params}
             try:
                 idem = action_type.idempotency_key_template.format(**fmt_vars)
+                if idempotency_suffix:
+                    idem += idempotency_suffix   # C1：evals 运行隔离
             except KeyError:
                 idem = None
 
@@ -128,7 +161,7 @@ class WorkflowEngine:
             if all((o.properties or {}).get(k) == v for k, v in filters.items())
         ]
 
-    async def _ai_step(self, step: Dict[str, Any], context: Dict[str, Any]) -> Dict[str, Any]:
+    async def _ai_step(self, step: Dict[str, Any], context: Dict[str, Any], session=None) -> Dict[str, Any]:
         prefix = (step.get("prompt_prefix") or "").strip()
         # 单上游（prompt_var）或多上游（prompt_vars，带标注块拼接——视角对抗/综合裁决）
         var_names = step.get("prompt_vars") or ([step["prompt_var"]] if step.get("prompt_var") else [])
@@ -147,7 +180,7 @@ class WorkflowEngine:
 
         prompt = f"{prefix}\n\n{variable}" if variable is not None else prefix
         content = await call_model(step.get("model", "glm-5.1"), prompt,
-                                   session=self.session, caller="ai-step")
+                                   session=session or self.session, caller="ai-step")
 
         result: Any = content
         if step.get("expect_json"):

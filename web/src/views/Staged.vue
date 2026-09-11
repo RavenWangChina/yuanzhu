@@ -21,7 +21,7 @@
       <!-- 参数友好渲染（H2 卡点 1）：中文键名 + 长文本块，不再显示原始 JSON -->
       <div v-for="(val, key) in friendlyParams(item.params)" :key="key" class="kv">
         <span class="k">{{ key }}</span>
-        <span class="v">{{ shortText(val) }}</span>
+        <span class="v">{{ shortText(vLabel(val)) }}</span>
       </div>
       <div v-for="key in longTextKeys(item.params)" :key="'lt-' + key" class="text-block">
         <div class="text-block-title">{{ labelOf(key) }}</div>
@@ -31,7 +31,7 @@
       <div v-if="item.before" class="snapshot">
         <div v-for="(val, key) in item.before" :key="key" class="kv">
           <span class="k">{{ labelOf(String(key)) }}</span>
-          <span class="v">{{ val }}</span>
+          <span class="v">{{ vLabel(val) }}</span>
         </div>
       </div>
 
@@ -53,6 +53,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { api } from '../api'
+import { vLabel } from '../labels'
 
 interface PendingItem {
   id: number

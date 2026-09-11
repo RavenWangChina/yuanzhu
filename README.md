@@ -29,7 +29,9 @@ yuanzhu status && yuanzhu pending && yuanzhu templates
 .venv/Scripts/python seed_h2.py
 ```
 
-Web 控制台前端源码在 `web/`（Vite+Vue3，构建产物由 FastAPI 托管）；模型接入零配置：网关自动导入 dsh 已配的 provider（天翼云等，OpenAI 兼容协议全家桶）；自定义端点用 `YUANZHU_PROVIDER_n_*` 环境变量。
+Web 控制台前端源码在 `web/`（Vite+Vue3，构建产物由 FastAPI 托管）；模型接入零配置：网关自动导入 dsh 已配的 provider（天翼云等，OpenAI 兼容协议全家桶）；自定义端点用 `YUANZHU_PROVIDER_n_*` 环境变量；估费价目用 `YUANZHU_MODEL_PRICES`（JSON）。
+
+打开首页即**深度问答**：问一个问题自动走六步流水线（澄清→双视角并行→审查→裁决→人审采纳）。
 
 ## 文档导航
 

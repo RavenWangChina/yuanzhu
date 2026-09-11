@@ -40,10 +40,11 @@ async def test_eval_case_semantics(aiqa_registered):
     report = await runner.run_template("aiqa")
     assert report["passed"] == 3
 
-    obj_store = ObjectStore(aiqa_registered)
-    bug_type = await obj_store.get_type_by_name("aiqa", "Bug")
-    bugs = await obj_store.list_objects(type_id=bug_type.id)
-    assert any(b.properties["title"] == "eval-登录超时" for b in bugs)
+    # v0.1.1 新语义：evals 副作用已清理（对象不残留），验证审计记录保留
+    from sqlalchemy import select as _sel
+    from yuanzhu.db.models import ActionExec
+    execs = (await aiqa_registered.execute(_sel(ActionExec))).scalars().all()
+    assert any("eval-" + "登录超时" in str(e.params_json) for e in execs)
 
     # 二次 Resolve 的动作被拒（error_contains: submission_criteria 断言已过）
     sm = StagedStateMachine(aiqa_registered)

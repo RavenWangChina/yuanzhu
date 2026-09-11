@@ -27,27 +27,28 @@ steps:
     model: glm-5.1
     output: clarification
 
-  - id: view-a
-    type: ai_step               # 环节2 方案（视角A：务实推进者）
-    prompt_prefix: |
-      你是务实的资深工程师/推进者（视角A）。基于澄清要点回答问题：
-      直接给可执行主张+理由+关键步骤。敢于下判断，但标注你的假设。
-      500 字以内。
-    prompt_vars: ["clarification"]
-    model: glm-5.1
-    output: ans_a
+  - parallel:                  # v0.1.1 真并行：双盲视角同时生成（对抗交给审查步）
+    - id: view-a
+      type: ai_step             # 环节2 方案（视角A：务实推进者）
+      prompt_prefix: |
+        你是务实的资深工程师/推进者（视角A）。基于澄清要点回答问题：
+        直接给可执行主张+理由+关键步骤。敢于下判断，但标注你的假设。
+        500 字以内。
+      prompt_vars: ["clarification"]
+      model: glm-5.1
+      output: ans_a
 
-  - id: view-b
-    type: ai_step               # 环节2 对抗（视角B：质疑者）
-    prompt_prefix: |
-      你是尖锐的质疑者/devil's advocate（视角B）。针对视角A的主张：
-      1. 找出最强的 2-3 个反驳（事实性风险，不是抬杠）
-      2. 指出视角A忽略了什么（隐含假设、长期代价、反例）
-      3. 给出你会主张的替代路线。
-      400 字以内。
-    prompt_vars: ["ans_a"]
-    model: glm-5.1
-    output: ans_b
+    - id: view-b
+      type: ai_step             # 环节2 对抗（视角B：独立质疑者——双盲，不读A）
+      prompt_prefix: |
+        你是尖锐的质疑者/风险分析师（视角B）。独立回答同一问题，但立场是挑风险：
+        1. 这个决策最容易死在哪里（事实性风险，不是抬杠）
+        2. 多数人忽略的隐含成本/长期代价/反例
+        3. 你会主张的更保守替代路线。
+        400 字以内。
+      prompt_vars: ["clarification"]
+      model: glm-5.1
+      output: ans_b
 
   - id: audit
     type: ai_step               # 环节4 双通道审查

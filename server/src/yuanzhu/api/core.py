@@ -124,6 +124,20 @@ async def forge_template_endpoint(body: ForgeRequest, db: AsyncSession = Depends
         raise HTTPException(status_code=400, detail=str(e))
 
 
+class ReloadRequest(BaseModel):
+    name: str
+
+
+@router.post("/templates/reload")
+async def reload_template_endpoint(body: ReloadRequest, db: AsyncSession = Depends(get_db)):
+    """草稿转正：人工修正目录后重跑评测守门"""
+    from yuanzhu.template.forge import reload_template
+    try:
+        return await reload_template(db, body.name)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
 @router.get("/templates")
 async def list_templates(domain: Optional[str] = None, status: Optional[str] = None,
                          db: AsyncSession = Depends(get_db)):

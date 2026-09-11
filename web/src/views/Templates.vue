@@ -55,6 +55,22 @@
         <span class="k">评测用例</span>
         <span class="v">{{ (t.evals_json || []).length }} 条</span>
       </div>
+
+      <!-- T6 草稿转正：失败原因 + 重跑评测 -->
+      <div v-if="t.status === 'draft' && evalReport(t)" class="draft-report">
+        <div style="font-size:13px; margin-bottom:6px">
+          评测 {{ evalReport(t).passed }}/{{ evalReport(t).total }} 通过
+          <span v-if="evalReport(t).failures?.length" style="color:var(--danger)">
+            （失败：{{ evalReport(t).failures.join('、') }}）
+          </span>
+        </div>
+        <div style="font-size:12px; color:var(--muted); margin-bottom:8px">
+          修正模板目录 {{ forgeDir(t.name) }} 下的 YAML 后点重跑
+        </div>
+        <button class="btn" :disabled="reloading[t.name]" @click="doReload(t.name)">
+          {{ reloading[t.name] ? '评测中…' : '重跑评测' }}
+        </button>
+      </div>
     </div>
 
     <!-- 运行弹窗 -->
@@ -166,6 +182,28 @@ async function submitRun() {
 }
 
 const loadError = ref('')
+const reloading = ref<Record<string, boolean>>({})
+
+function evalReport(t: any) {
+  return (t.manifest_json || {}).last_evals_report
+}
+function forgeDir(name: string) {
+  return `templates/forge/${name}`
+}
+async function doReload(name: string) {
+  reloading.value[name] = true
+  try {
+    const r = await api.post('/api/templates/reload', { name })
+    showToast(r.status === 'published'
+      ? `✅ ${name} 评测全过，已上架`
+      : `⚠ 仍有 ${r.evals.failures?.length || 0} 条失败，留在草稿区`)
+    templates.value = await api.get('/api/templates')
+  } catch (e) {
+    showToast(String(e).replace('Error: ', ''), true)
+  } finally {
+    reloading.value[name] = false
+  }
+}
 const forgeDesc = ref('')
 const forging = ref(false)
 const forgeResult = ref<any>(null)
@@ -204,6 +242,9 @@ onMounted(async () => {
 .forge-card { border-left: 3px solid var(--primary); }
 .forge-result { margin-top: 10px; font-size: 13px; color: #ff8800; }
 .forge-result.ok { color: var(--success); }
+.draft-report {
+  background: #fff8e6; border-radius: 8px; padding: 10px 14px; margin-top: 8px;
+}
 .error-box {
   background: #feecec; color: var(--danger);
   border-radius: 8px; padding: 10px 14px;

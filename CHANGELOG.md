@@ -2,7 +2,21 @@
 
 本项目所有显著变更记录于此。格式参照 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，版本遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
-## [Unreleased]
+## [0.1.1] · 2026-09-11
+
+### Added（打磨版 + 并行 agent，142 测试全绿）
+- **T5 引擎并行组**：steps 支持 `{"parallel": [...]}`——组内 asyncio.gather 并发（ai_step 独立 session 计量，AsyncSession 并发安全）；只允许 ai/query 步骤（fail fast）；deep-answer 双盲并行化（视角A/B 同时生成，对抗移到审查步）
+- **T7 深度问答页**：`/` 首页直达 /ask——输入框→六步流水线→裁决展示（中间过程折叠）→采纳按钮；导航首项
+- **T6 草稿转正**：`POST /api/templates/reload` + Web「重跑评测」按钮——forge 铸坏/evals 不过的 draft，人修目录后一键重跑守门；评测报告存 manifest.last_evals_report（失败原因 Web 可见）
+- **T4 枚举值中文化**：labels.ts 显示层映射（major→较重/Open→进行中…；存储值不变——数据契约）
+- **T2 估费真值**：YUANZHU_MODEL_PRICES 自定义价目表（JSON）优先 + litellm 本地表 fallback（审查 C2 修正：glm 类网关模型必须走自定义价目）
+- **T1 启动提速**：本地价格表（12s→3.1s 实测）
+- **T3 evals 副作用清理**：跑完删除 eval- 前缀测试对象（按 created_object_ids 精确删，exec 审计保留）
+
+### Fixed（0.1.1 设计对抗审查，全部 PoC 级验证）
+- **C1 evals 幂等键冲突**（第二次跑评测必挂，废掉 reload 场景）：评测运行幂等键追加 run 标识隔离
+- **C2 估费永远记 0**：litellm 对网关裸名模型无价目且变量名笔误被 except 静默吞——自定义价目表 + 修正
+- **I1-I4**：并行 session 注入点/组内类型约束/异常 fail fast（禁 return_exceptions 防静默降级）/清理误删面（created_ids 为据）
 
 ### Added（2026-09-10 深夜二 · metaflow 元流程问答，136 测试全绿）
 - **引擎 prompt_vars 多上游绑定**：ai_step 可同时接收多个上游输出（标注块拼接）——视角对抗/综合裁决的地基
