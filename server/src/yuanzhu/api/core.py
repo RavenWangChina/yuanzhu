@@ -111,6 +111,51 @@ async def register_template(body: TemplateRegisterRequest, db: AsyncSession = De
         raise HTTPException(status_code=400, detail=str(e))
 
 
+@router.post("/metaflow/adopt/{exec_id}")
+async def adopt_answer(exec_id: int, body: dict, db: AsyncSession = Depends(get_db)):
+    """v0.1.3 采纳=升级标记（答案已自动入库为未采纳态）：
+    标记 adopted_by + 自动触发洞见沉淀（staged 轻确认）。"""
+    from sqlalchemy import select as _sel
+    from yuanzhu.db.models import ActionExec, Object
+
+    exec = await db.get(ActionExec, exec_id)
+    if not exec:
+        raise HTTPException(status_code=404, detail="执行记录不存在")
+    if exec.status != "applied":
+        raise HTTPException(status_code=400, detail=f"状态 {exec.status} 不可采纳")
+
+    adopted_by = (body or {}).get("adopted_by", "web-user")
+    created_ids = (exec.exec_log_json or {}).get("created_object_ids", [])
+    answer_obj = None
+    from sqlalchemy.orm.attributes import flag_modified
+    for oid in created_ids:
+        o = await db.get(Object, oid)
+        if o:
+            props = dict(o.properties_json or {})
+            props["adopted_by"] = adopted_by
+            o.properties_json = props     # 新 dict 赋值 + flag 双保险（JSON 列变更检测）
+            flag_modified(o, "properties_json")
+            answer_obj = o
+    if not answer_obj:
+        raise HTTPException(status_code=400, detail="该执行没有关联答案对象")
+
+    # 采纳即沉淀：自动提炼洞见（staged 待审轻确认）
+    try:
+        from yuanzhu.workflow.engine import WorkflowEngine
+        params = exec.params_json or {}
+        await WorkflowEngine(db).run(
+            domain="metaflow", workflow_name="distill-insight",
+            params={"question": params.get("question", ""),
+                    "answer": params.get("content", "")},
+            run_by="auto-distill",
+        )
+    except Exception:
+        pass  # 沉淀失败不阻断采纳
+
+    await db.flush()
+    return {"status": "adopted", "object_id": answer_obj.id, "reviewed_by": adopted_by}
+
+
 @router.post("/metaflow/suggest-workflow")
 async def suggest_workflow(body: dict, db: AsyncSession = Depends(get_db)):
     """T4 重复模式检测：分析近期问答历史，发现例行公事模式 → 建议铸工作流。

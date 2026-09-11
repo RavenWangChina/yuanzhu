@@ -140,9 +140,7 @@ async function send() {
 async function adopt(m: Message) {
   if (!m.execId) return
   try {
-    await api.post(`/api/staged/${m.execId}/approve`, {
-      reviewed_by: 'web-chat', review_comment: '采纳',
-    })
+    await api.post(`/api/metaflow/adopt/${m.execId}`, { adopted_by: 'web-chat' })
     m.adopted = true
   } catch (e: any) {
     m.error = String(e).replace('Error: ', '')

@@ -1,8 +1,8 @@
 # 采纳答案（元流程产出的答案，人审采纳后入库）
 name: SaveAnswer
-description_for_agent: 保存一份经流水线产出的深度答案（进入待审中心，人采纳后入库）
-autonomy_level: 2
-requires_staging: true
+description_for_agent: 保存深度问答的答案（自动入库为未采纳态，用户可后续标记采纳）
+autonomy_level: 1
+requires_staging: false   # v0.1.3：答案默认入库（未采纳态）——不点采纳也可被历史反哺/模式检测使用；采纳只是升级标记
 idempotency_key_template: "ans-{question}"
 params:
   type: object

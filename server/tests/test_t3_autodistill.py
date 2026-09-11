@@ -31,9 +31,9 @@ async def client(db_session, monkeypatch):
     app.dependency_overrides.clear()
 
 
-async def test_approve_answer_triggers_distill(client, db_session):
-    """采纳深度答案 → 自动出现洞见候选（staged 待轻确认）"""
-    # 造一条 SaveAnswer 待审
+async def test_saveanswer_is_l1_autoapplied(client, db_session):
+    """v0.1.3 语义：SaveAnswer 是 L1——答案自动入库（不点采纳也可用），
+    采纳与沉淀链路由 test_autosave 的 adopt 用例覆盖"""
     resp = await client.post("/mcp", json={
         "method": "tools/call",
         "params": {"name": "execute_metaflow_saveanswer",
@@ -41,16 +41,4 @@ async def test_approve_answer_triggers_distill(client, db_session):
                                  "content": "【结论】分情况…"}},
     }, headers={"X-Agent-ID": "t"})
     assert resp.status_code == 200
-    exec_id = resp.json()["exec_id"]
-
-    # 采纳
-    resp = await client.post(f"/api/staged/{exec_id}/approve", json={
-        "reviewed_by": "tester", "review_comment": "采纳"})
-    assert resp.status_code == 200
-
-    # 待审中心应出现 DistillInsight 候选（auto-distill）
-    resp = await client.get("/api/staged/pending")
-    pending = resp.json()
-    insights = [p for p in pending if "DistillInsight" in p.get("action", "")]
-    assert insights, f"洞见候选未自动产生: {[p['action'] for p in pending]}"
-    assert "自建中台" in str(insights[0]["params"]) or "托管" in str(insights[0]["params"])
+    assert resp.json()["status"] == "applied", "SaveAnswer 应为 L1 自动入库"

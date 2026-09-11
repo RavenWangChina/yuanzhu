@@ -44,15 +44,18 @@ async def test_deep_answer_pipeline(metaflow, monkeypatch):
         domain="metaflow", workflow_name="deep-answer",
         params={"question": "该不该自建中台"}, run_by="t")
 
-    # 六步全部执行，最终 staged 等人采纳
-    assert result["steps"]["save"]["status"] == "staged"
+    # v0.1.3：答案自动入库（L1），采纳是升级标记
+    assert result["steps"]["save"]["status"] == "applied"
     # 审查步收到 A+B（多上游）
     assert "视角A" in prompts[3] and "视角B" in prompts[3]
     # 综合步收到三方
     assert all(k in prompts[4] for k in ("视角A", "视角B", "审查"))
-    # 待审中心有答案
-    pending = await StagedStateMachine(metaflow).list_pending()
-    assert any("该不该自建中台" in str(p.params_json) for p in pending)
+    # 答案已入库（未采纳态）
+    from yuanzhu.ontology.object_store import ObjectStore
+    store = ObjectStore(metaflow)
+    t = await store.get_type_by_name("metaflow", "Answer")
+    objs = await store.list_objects(type_id=t.id)
+    assert any("该不该自建中台" in str(o.properties.get("question", "")) for o in objs)
 
 
 async def test_insight_recall_feeds_clarify(metaflow, monkeypatch):

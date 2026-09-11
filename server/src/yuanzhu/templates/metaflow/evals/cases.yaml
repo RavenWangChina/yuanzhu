@@ -1,11 +1,10 @@
 # 元流程问答域评测
 cases:
-  - name: 采纳答案-人审后入库
+  - name: 答案自动入库-未采纳态
     steps:
       - action: SaveAnswer
         params: {question: eval-测试问题, content: "【结论】测试通过"}
-        expect: {status: staged}
-      - approve: {}
+        expect: {status: applied}      # v0.1.3：L1 自动入库（不点采纳也可用）
     expect:
       status: applied
       object_exists: {type: Answer, question: eval-测试问题}

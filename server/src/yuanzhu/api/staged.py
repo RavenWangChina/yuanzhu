@@ -53,6 +53,8 @@ async def approve(exec_id: int, req: ReviewRequest, db: AsyncSession = Depends(g
         applied = await sm.apply(exec_id)
 
         # 采纳即沉淀：metaflow 的答案被采纳 → 同事务自动提炼洞见（staged 轻确认）
+        # v0.1.3：SaveAnswer 是 L1（答案已自动入库），approve 端点在 L1 场景收不到——
+        # 采纳走独立端点 /api/metaflow/adopt（标记 adopted_by + 触发沉淀）
         from sqlalchemy import select as _sel
         from yuanzhu.db.models import ActionType
         at = (await db.execute(_sel(ActionType).where(ActionType.id == exec.action_type_id))).scalar_one_or_none()
