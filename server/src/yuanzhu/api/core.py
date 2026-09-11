@@ -111,6 +111,55 @@ async def register_template(body: TemplateRegisterRequest, db: AsyncSession = De
         raise HTTPException(status_code=400, detail=str(e))
 
 
+@router.post("/metaflow/suggest-workflow")
+async def suggest_workflow(body: dict, db: AsyncSession = Depends(get_db)):
+    """T4 重复模式检测：分析近期问答历史，发现例行公事模式 → 建议铸工作流。
+
+    返回 {suggested, reason, description}——description 可直接喂 /api/templates/forge。
+    """
+    from sqlalchemy import select as _sel
+    from yuanzhu.db.models import Object, ObjectType
+    # 取 metaflow 域已采纳的 Answer（问答历史）
+    at = (await db.execute(_sel(ObjectType).where(
+        ObjectType.domain == "metaflow", ObjectType.name == "Answer"))).scalar_one_or_none()
+    if not at:
+        return {"suggested": False, "reason": "还没有问答历史"}
+    objs = (await db.execute(
+        _sel(Object).where(Object.type_id == at.id).order_by(Object.created_at.desc()).limit(20)
+    )).scalars().all()
+    history = [
+        {"question": (o.properties or {}).get("question", ""),
+         "adopted": bool((o.properties or {}).get("adopted_by"))}
+        for o in objs if (o.properties or {}).get("question")
+    ]
+    adopted = [h for h in history if h["adopted"]]
+    if len(history) < 3:
+        return {"suggested": False, "reason": f"问答历史不足（{len(history)}/3）——多问几次我才能发现你的例行公事"}
+
+    import json as _json
+    from yuanzhu.workflow.engine import call_model
+    prompt = (
+        "你是工作模式分析师。分析用户的问答历史（按时间倒序），判断是否存在**例行公事模式**"
+        "（同类问题反复出现≥3次，如周报汇总/数据整理/例行检查）。\n\n"
+        "严格按 JSON 输出：\n"
+        '{"suggested": true/false,\n'
+        ' "reason": "中文理由（给用户看，提具体问题主题和次数）",\n'
+        ' "description": "如果建议，生成一段第一人称的工作描述（可直接用于铸工作流模板），'
+        '如：我每周五需要收集各小组的工作进展……"}\n'
+        "不建议就 suggested:false，description 留空。只输出 JSON。\n\n"
+        f"问答历史：{_json.dumps(history, ensure_ascii=False)}"
+    )
+    try:
+        content = await call_model("glm-5.1", prompt, session=db, caller="suggest-workflow")
+        start, end = content.find("{"), content.rfind("}")
+        result = _json.loads(content[start:end + 1])
+        return {"suggested": bool(result.get("suggested")),
+                "reason": result.get("reason", ""),
+                "description": result.get("description", "")}
+    except Exception as e:
+        return {"suggested": False, "reason": f"分析失败: {e}"}
+
+
 class ForgeRequest(BaseModel):
     description: str
 

@@ -175,6 +175,28 @@ async def cmd_run(client, args, ctx):
         ctx.print("  → yuanzhu pending 查看 / yuanzhu approve <id> 审批")
 
 
+async def cmd_ask(client, args, ctx):
+    ctx.print("⏳ 六步流水线运行中（澄清→双视角并行→审查→裁决，约 2-4 分钟）…")
+    resp = await _post(client, "/api/workflows/run", {
+        "domain": "metaflow", "workflow": "deep-answer",
+        "params": {"question": args.question}, "run_by": "cli-ask",
+    }, ctx)
+    if ctx.exit_code:
+        return
+    steps = resp.json().get("steps", {})
+    final = (steps.get("verdict") or {}).get("result", "（无输出）")
+    ctx.print(final)
+    exec_id = (steps.get("save") or {}).get("exec_id")
+    if args.adopt and exec_id:
+        r2 = await _post(client, f"/api/staged/{exec_id}/approve", {
+            "reviewed_by": "cli-ask", "review_comment": "CLI 采纳",
+        }, ctx)
+        if ctx.exit_code == 0:
+            ctx.print("\n✓ 已采纳（洞见将自动沉淀为知识）")
+    elif exec_id:
+        ctx.print(f"\n（Web 待审中心 #{exec_id} 可采纳）")
+
+
 async def cmd_forge(client, args, ctx):
     resp = await _post(client, "/api/templates/forge",
                        {"description": args.description}, ctx)
@@ -255,6 +277,10 @@ def build_parser() -> argparse.ArgumentParser:
     run.add_argument("workflow")
     run.add_argument("--param", nargs="*", default=[], metavar="k=v", help="工作流参数")
 
+    ask = sub.add_parser("ask", help="深度问答（六步流水线：澄清→双视角→审查→裁决）")
+    ask.add_argument("question", help="你的问题")
+    ask.add_argument("--adopt", action="store_true", help="自动采纳答案（默认等你在 Web 审）")
+
     fg = sub.add_parser("forge", help="一句话铸模板（AI 生成四段式，evals 守门）")
     fg.add_argument("description", help="描述你的工作场景，如：我每天要收集各组周报汇总成一份")
 
@@ -273,7 +299,7 @@ def build_parser() -> argparse.ArgumentParser:
 HANDLERS = {
     "status": cmd_status, "query": cmd_query, "pending": cmd_pending,
     "approve": cmd_approve, "reject": cmd_reject, "templates": cmd_templates,
-    "run": cmd_run, "mcp": cmd_mcp_tools, "import": cmd_import, "forge": cmd_forge,
+    "run": cmd_run, "mcp": cmd_mcp_tools, "import": cmd_import, "forge": cmd_forge, "ask": cmd_ask,
 }
 
 

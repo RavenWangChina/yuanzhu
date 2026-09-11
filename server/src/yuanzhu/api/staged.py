@@ -46,11 +46,30 @@ async def list_pending(db: AsyncSession = Depends(get_db)):
 
 @router.post("/{exec_id}/approve", response_model=ActionExecResponse)
 async def approve(exec_id: int, req: ReviewRequest, db: AsyncSession = Depends(get_db)):
-    """批准（自动应用 transform）"""
+    """批准（自动应用 transform）；v0.1.3：采纳深度答案时自动触发洞见提炼（采纳即沉淀）"""
     sm = StagedStateMachine(db)
     try:
-        await sm.approve(exec_id, reviewed_by=req.reviewed_by, review_comment=req.review_comment)
-        return await sm.apply(exec_id)
+        exec = await sm.approve(exec_id, reviewed_by=req.reviewed_by, review_comment=req.review_comment)
+        applied = await sm.apply(exec_id)
+
+        # 采纳即沉淀：metaflow 的答案被采纳 → 同事务自动提炼洞见（staged 轻确认）
+        from sqlalchemy import select as _sel
+        from yuanzhu.db.models import ActionType
+        at = (await db.execute(_sel(ActionType).where(ActionType.id == exec.action_type_id))).scalar_one_or_none()
+        if at and at.domain == "metaflow" and at.name == "SaveAnswer":
+            try:
+                from yuanzhu.workflow.engine import WorkflowEngine
+                params = exec.params_json or {}
+                await WorkflowEngine(db).run(
+                    domain="metaflow", workflow_name="distill-insight",
+                    params={"question": params.get("question", ""),
+                            "answer": params.get("content", "")},
+                    run_by="auto-distill",
+                )
+            except Exception:
+                pass  # 沉淀失败不阻断采纳主流程（下次可手动 distill）
+
+        return applied
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 

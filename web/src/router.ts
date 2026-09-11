@@ -3,13 +3,13 @@ import Nodes from './views/Nodes.vue'
 import Templates from './views/Templates.vue'
 import Staged from './views/Staged.vue'
 import Usage from './views/Usage.vue'
-import Ask from './views/Ask.vue'
+import Chat from './views/Chat.vue'
 
 const router = createRouter({
   history: createWebHistory(),
   routes: [
     { path: '/', redirect: '/ask' },
-    { path: '/ask', component: Ask },
+    { path: '/ask', component: Chat },
     { path: '/nodes', component: Nodes },
     { path: '/templates', component: Templates },
     { path: '/staged', component: Staged },

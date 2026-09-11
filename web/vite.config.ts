@@ -13,7 +13,7 @@ export default defineConfig({
   },
   // 构建产物给 FastAPI 托管
   build: {
-    outDir: '../server/static',
+    outDir: '../server/src/yuanzhu/static',   // v0.1.2 起资源在包内（PyPI 分发）
     emptyOutDir: true,
   },
 })
