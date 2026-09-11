@@ -296,6 +296,43 @@ class WorkflowRunRequest(BaseModel):
     run_by: str = "web-user"
 
 
+@router.post("/workflows/run-async")
+async def run_workflow_async(req: WorkflowRunRequest):
+    """v0.1.4 异步工作流：立返 task_id；GET /workflows/status/{id} 轮询真实步骤进度"""
+    import asyncio
+    from yuanzhu.workflow.engine import WorkflowEngine
+    from yuanzhu.workflow import tasks as wt
+    from yuanzhu.db.database import async_session_factory
+
+    task_id = wt.create_task()
+
+    async def _runner():
+        try:
+            async with async_session_factory() as session:
+                engine = WorkflowEngine(session)
+                result = await engine.run(
+                    domain=req.domain, workflow_name=req.workflow,
+                    params=req.params, run_by=req.run_by,
+                    on_step=lambda sid: wt.add_step_done(task_id, sid),
+                )
+                await session.commit()
+            wt.update_task(task_id, done=True, status="done", result=result)
+        except Exception as e:
+            wt.update_task(task_id, done=True, status="error", error=str(e))
+
+    asyncio.get_event_loop().create_task(_runner()) if False else asyncio.ensure_future(_runner())
+    return {"task_id": task_id}
+
+
+@router.get("/workflows/status/{task_id}")
+async def workflow_status(task_id: str):
+    from yuanzhu.workflow import tasks as wt
+    t = wt.get_task(task_id)
+    if not t:
+        raise HTTPException(status_code=404, detail="任务不存在")
+    return t
+
+
 @router.post("/workflows/run")
 async def run_workflow(req: WorkflowRunRequest, db: AsyncSession = Depends(get_db)):
     """触发工作流（单机模式进程内执行；ai_step 走网关、action_step 走 staged）"""

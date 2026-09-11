@@ -7,7 +7,7 @@
 - 变量绑定：$params.x（入参）/ $output（上游步骤输出）/ $item.x（迭代项）
 """
 import json
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Callable
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -55,8 +55,9 @@ class WorkflowEngine:
     async def run(
         self, domain: str, workflow_name: str,
         params: Dict[str, Any], run_by: str,
+        on_step: Optional[Callable] = None,
     ) -> Dict[str, Any]:
-        """执行工作流（顺序步骤 + parallel 并行组——v0.1.1）"""
+        """执行工作流（顺序步骤 + parallel 并行组；v0.1.4：on_step(step_id) 步骤完成回调）"""
         workflow = await self._load_workflow(domain, workflow_name)
 
         context: Dict[str, Any] = {"params": params}
@@ -101,6 +102,12 @@ class WorkflowEngine:
 
             else:
                 raise ValueError(f"未知步骤类型: {step_type}（支持 action/ai/query/parallel）")
+
+            if on_step and step_id:
+                try:
+                    on_step(step_id)
+                except Exception:
+                    pass   # 进度回调失败不影响主流程
 
             # 输出绑定（普通步骤绑自己的 output；并行组子步骤在组内绑）
             if step.get("output") and step_id in step_results:
