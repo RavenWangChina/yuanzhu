@@ -142,8 +142,8 @@ async function send() {
   await runQuestion(q)
 }
 
-async function runQuestion(q: string) {
-  messages.value.push(reactive({ role: 'user', text: q }))
+async function runQuestion(q: string, skipUserPush = false) {
+  if (!skipUserPush) messages.value.push(reactive({ role: 'user', text: q }))
   const aiMsg: Message = reactive({ role: 'assistant', text: '', loading: true, phase: '启动流水线', doneCount: 0 })
   messages.value.push(aiMsg)
   running.value = true
@@ -205,8 +205,8 @@ async function runQuestion(q: string) {
   if (queue.length) {
     const next = queue.shift()!
     const qm = messages.value.filter(m => m.text === next && m.queued).pop()
-    if (qm) qm.queued = false
-    await runQuestion(next)
+    if (qm) qm.queued = false      // 复用这条气泡（不重复 push）
+    await runQuestion(next, !!qm)
   }
 }
 
