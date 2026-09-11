@@ -57,7 +57,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, nextTick } from 'vue'
+import { ref, reactive, onMounted, nextTick } from 'vue'
 import { api } from '../api'
 
 interface Message {
@@ -97,7 +97,8 @@ async function send() {
   if (!q || running.value) return
   question.value = ''
   messages.value.push({ role: 'user', text: q })
-  const aiMsg: Message = { role: 'assistant', text: '', loading: true, phase: '澄清问题' }
+  // P0 修复：reactive 包裹——push 后对 phase/loading/text 的修改才能触发视图更新
+  const aiMsg: Message = reactive({ role: 'assistant', text: '', loading: true, phase: '澄清问题' })
   messages.value.push(aiMsg)
   running.value = true
   await scrollBottom()
@@ -185,7 +186,8 @@ onMounted(() => {
     for (const o of objs.reverse()) {
       if (o.properties?.question && o.properties?.content) {
         messages.value.push({ role: 'user', text: o.properties.question })
-        messages.value.push({ role: 'assistant', text: o.properties.content, adopted: true })
+        messages.value.push({ role: 'assistant', text: o.properties.content,
+          adopted: !!o.properties.adopted_by })   // 按 adopted_by 判断（dogfood 卡点3）
       }
     }
     scrollBottom()
