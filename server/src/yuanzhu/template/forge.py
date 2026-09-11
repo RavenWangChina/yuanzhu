@@ -59,7 +59,11 @@ FORGE_PROMPT_PREFIX = """你是工作流模板架构师。把用户描述的工�
 - evals 一致性：只引用已声明的动作名；object_exists.type 必须与动作 transform 的 create_object.type 逐字一致；
   L1 动作的 eval expect status=applied（无 approve 步）；L2 动作 expect status=staged 后接 approve 步
 - transform 的 with 值：from:params.属性 / literal:固定值；with 引用的属性必须在 params.properties 里声明
-- 工作流步骤三选一：action_step（做动作）/ ai_step（AI 处理，prompt_prefix+prompt_var+model glm-5.1+expect_json）/ query_step（查对象）"""
+- 工作流步骤三选一，**字段 schema 严格如下**（不要发明新字段名）：
+  action_step: {"id": "xx", "type": "action_step", "action": "动作名", "params": {"字段": "$params.参数名"}}
+  ai_step: {"id": "xx", "type": "ai_step", "prompt_prefix": "稳定前缀", "prompt_var": "上游output名（不带$前缀）", "model": "glm-5.1", "output": "输出名", "expect_json": true|false}
+  query_step: {"id": "xx", "type": "query_step", "object_type": "对象类型名", "filter": {"属性": "值"}, "output": "输出名"}
+  常见错误：query_step 的类型名放在 object_type 字段（不是 query.type）；prompt_var 直接写上游 output 名（不要 $steps.xxx.result 语法）"""
 
 
 async def generate_template_json(description: str) -> Dict[str, Any]:
@@ -77,6 +81,16 @@ async def forge_template(session, description: str) -> Dict[str, Any]:
     """一句话 → 四段式模板 → evals 守门 → 上架/草稿"""
     template = await generate_template_json(description)
     _validate(template)
+
+    # v0.1.5 dry-run 门禁：每步 schema 校验（比 evals 更早——evals 测行为，dry-run 测结构）
+    for wf in template.get("workflows", []):
+        errors = dry_run_workflow(wf)
+        if errors:
+            raise ValueError(
+                f"AI 生成的工作流「{wf.get('name', '?')}」schema 不合法（{len(errors)} 处）：\n  - "
+                + "\n  - ".join(errors[:5])
+                + "\n请重试或换种描述"
+            )
 
     name = template["manifest"]["name"]
     tpl_dir = _write_files(name, template)
@@ -207,3 +221,73 @@ def _parse_json(content: str) -> Dict[str, Any]:
     if start == -1 or end <= start:
         raise ValueError(f"AI 输出不含 JSON 对象: {content[:80]}")
     return json.loads(text[start:end + 1])
+
+
+def dry_run_workflow(wf: Dict[str, Any]) -> List[str]:
+    """工作流结构校验（不执行——每步字段完整性+引用一致性）
+
+    forge 产物注册前的第一道门（evals 是第二道：测行为）。
+    """
+    errors: List[str] = []
+    outputs = set()          # 已声明的 output 名
+    params_names = set()     # params_schema 声明的参数名
+
+    for ps in wf.get("params_schema", []):
+        if ps.get("name"):
+            params_names.add(ps["name"])
+
+    for step in wf.get("steps", []):
+        sid = step.get("id", "?")
+        stype = step.get("type", "")
+
+        if stype == "query_step":
+            if "object_type" not in step:
+                got = step.get("query", {}).get("type")
+                errors.append(
+                    f"[{sid}] query_step 缺 object_type"
+                    + (f"（写了 query.type={got!r}——移到顶层 object_type 字段）" if got else "")
+                )
+            if not step.get("output"):
+                errors.append(f"[{sid}] query_step 缺 output（下游要引用）")
+            outputs.add(step.get("output"))
+
+        elif stype == "ai_step":
+            for must in ("prompt_prefix", "model"):
+                if not step.get(must):
+                    errors.append(f"[{sid}] ai_step 缺 {must}")
+            pv = step.get("prompt_var", "")
+            if pv:
+                if pv.startswith("$"):
+                    errors.append(
+                        f"[{sid}] prompt_var 写了 {pv!r}——应直接写上游 output 名（不要 $ 前缀/"
+                        f"$steps.xxx.result 语法）"
+                    )
+                elif pv != "params" and pv not in params_names and pv not in outputs:
+                    errors.append(f"[{sid}] prompt_var={pv!r} 引用了未声明的上游 output")
+            if "action" in step:
+                errors.append(f"[{sid}] ai_step 不该有 action 字段（那是 action_step 的——删掉或改类型）")
+            if step.get("output"):
+                outputs.add(step["output"])
+
+        elif stype == "action_step":
+            if not step.get("action"):
+                errors.append(f"[{sid}] action_step 缺 action")
+            for k, v in (step.get("params") or {}).items():
+                if isinstance(v, str) and v.startswith("$item."):
+                    continue   # iterate_over 项引用合法
+                if isinstance(v, str) and v.startswith("$"):
+                    ref = v[1:]
+                    if ref.startswith("params.") and ref[7:] not in params_names:
+                        errors.append(f"[{sid}] params.{k} 引用了未声明的参数 {ref[7:]!r}")
+                    elif not ref.startswith("params.") and ref != "params" and ref not in outputs:
+                        errors.append(f"[{sid}] params.{k} 引用了未声明的上游 {ref!r}")
+
+        elif stype == "parallel" or "parallel" in step:
+            for sub in step.get("parallel", []):
+                sub_wf = {"name": wf.get("name", ""), "steps": [sub], "params_schema": wf.get("params_schema", [])}
+                errors += dry_run_workflow(sub_wf)
+
+        else:
+            errors.append(f"[{sid}] 未知步骤类型 {stype!r}（支持 action_step/ai_step/query_step/parallel）")
+
+    return errors

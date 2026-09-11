@@ -235,6 +235,28 @@ async def reload_template_endpoint(body: ReloadRequest, db: AsyncSession = Depen
         raise HTTPException(status_code=400, detail=str(e))
 
 
+@router.get("/templates/forge-files")
+async def get_forge_files():
+    """v0.1.5 知识库页：列出 forge 生成的模板源码（用户目录 YAML）"""
+    from yuanzhu.template.forge import FORGE_ROOT
+    if not FORGE_ROOT.is_dir():
+        return []
+    result = []
+    for tpl_dir in sorted(FORGE_ROOT.iterdir()):
+        if not tpl_dir.is_dir():
+            continue
+        files = {}
+        for f in sorted(tpl_dir.rglob("*.yaml")):
+            rel = str(f.relative_to(tpl_dir))
+            try:
+                files[rel] = f.read_text(encoding="utf-8")[:5000]   # 防超大
+            except Exception:
+                files[rel] = "# 读取失败"
+        if files:
+            result.append({"name": tpl_dir.name, "path": str(tpl_dir), "files": files})
+    return result
+
+
 @router.get("/templates")
 async def list_templates(domain: Optional[str] = None, status: Optional[str] = None,
                          db: AsyncSession = Depends(get_db)):

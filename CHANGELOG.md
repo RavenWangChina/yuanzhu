@@ -2,6 +2,14 @@
 
 本项目所有显著变更记录于此。格式参照 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，版本遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [0.1.5] · 2026-09-11（管理体验 + forge 硬化）
+
+### Fixed（dogfood 第二波发现，155 测试全绿）
+- **forge prompt 补全三步 schema**：query_step（object_type/filter/output）、ai_step（prompt_var 不带 $ 前缀）、action_step——AI 不再猜字段名
+- **forge dry-run 门禁**：注册前校验每步 schema 完整性+引用一致性（比 evals 更早——结构问题在生成时就拒绝，不留坏草稿让人踩坑）
+- **引擎容错**：query_step 缺 object_type → 400 带修复提示（"检测到 query.type=… 应写成 object_type"），不再是 500
+- **知识库页面**（Web 新导航"知识库"）：洞见列表 / 答案历史 / 全部域对象 / forge 模板 YAML 源码查看——生成的东西终于有统一入口了
+
 ## [0.1.4] · 2026-09-11（Dogfood 修复版）
 
 ### Fixed（真实使用实测抓到的四项，150 测试全绿）

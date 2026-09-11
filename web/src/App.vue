@@ -6,6 +6,7 @@
       <router-link class="nav-item" to="/staged">待审中心</router-link>
       <router-link class="nav-item" to="/templates">模板市场</router-link>
       <router-link class="nav-item" to="/nodes">节点拓扑</router-link>
+      <router-link class="nav-item" to="/knowledge">知识库</router-link>
       <router-link class="nav-item" to="/usage">用量与审计</router-link>
     </nav>
     <main class="main">

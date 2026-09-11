@@ -155,6 +155,15 @@ class WorkflowEngine:
     # ---------- 步骤实现 ----------
 
     async def _query_step(self, step: Dict[str, Any]) -> List[Dict[str, Any]]:
+        # v0.1.5 容错：缺 object_type 给修复提示（forge 产物常见——AI 写了 query.type）
+        if "object_type" not in step:
+            hint = ""
+            if "query" in step and "type" in step.get("query", {}):
+                hint = f"（检测到 query.type={step['query']['type']!r}——应写成 object_type 字段，不是 query.type）"
+            raise ValueError(
+                f"query_step 缺 object_type 字段{hint}。"
+                f"正确写法：{{id: xx, type: query_step, object_type: 类型名, filter: {{...}}}}"
+            )
         obj_type = await self.object_store.get_type_by_name(
             step.get("domain") or self._current_domain, step["object_type"]
         )

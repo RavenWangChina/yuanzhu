@@ -1,6 +1,6 @@
 [project]
 name = "yuanzhu"
-version = "0.1.4"
+version = "0.1.5"
 description = "元铸工坊 SOSOFAST——把最佳实践铸成可治理的 AI 工作流资产（AI 提议，人拍板）"
 readme = "README.md"
 license = { text = "AGPL-3.0" }
