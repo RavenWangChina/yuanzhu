@@ -56,9 +56,12 @@ class WorkflowEngine:
         self, domain: str, workflow_name: str,
         params: Dict[str, Any], run_by: str,
         on_step: Optional[Callable] = None,
+        allow_draft: bool = False,
     ) -> Dict[str, Any]:
-        """执行工作流（顺序步骤 + parallel 并行组；v0.1.4：on_step(step_id) 步骤完成回调）"""
-        workflow = await self._load_workflow(domain, workflow_name)
+        """执行工作流（顺序步骤 + parallel 并行组；v0.1.4：on_step(step_id) 步骤完成回调）
+
+        allow_draft：forge 守门场景——模板还是 draft 也要能跑冒烟评测。"""
+        workflow = await self._load_workflow(domain, workflow_name, allow_draft=allow_draft)
 
         context: Dict[str, Any] = {"params": params}
         step_results: Dict[str, Any] = {}
@@ -261,12 +264,16 @@ class WorkflowEngine:
             raise ValueError(f"AI 输出不含 JSON 数组: {content[:80]}")
         return json.loads(text[start:end + 1])
 
-    async def _load_workflow(self, domain: str, name: str) -> Dict[str, Any]:
+    async def _load_workflow(self, domain: str, name: str, allow_draft: bool = False
+                             ) -> Dict[str, Any]:
         from sqlalchemy import select
+        statuses = ("draft", "published") if allow_draft else ("published",)
         result = await self.session.execute(
-            select(Template).where(Template.domain == domain, Template.status == "published")
+            select(Template).where(Template.domain == domain, Template.status.in_(statuses))
         )
-        for tpl in result.scalars().all():
+        # 同名工作流：draft（守门中最新版）优先
+        tpls = sorted(result.scalars().all(), key=lambda t: t.status != "draft")
+        for tpl in tpls:
             for wf in tpl.workflows_json or []:
                 if wf.get("name") == name:
                     self._current_domain = domain

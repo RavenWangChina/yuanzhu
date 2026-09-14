@@ -83,6 +83,12 @@ async def forge_template(session, description: str) -> Dict[str, Any]:
     template = await generate_template_json(description)
     _validate(template)
 
+    # v0.1.8 模型名参数化：用当前环境可用模型替换硬编码
+    template = _resolve_model(template)
+
+    # v0.1.9 evals 守门加强：为每个工作流注入冒烟用例（确定性注入，不靠 AI 自觉）
+    template = _inject_smoke_evals(template)
+
     # v0.1.5 dry-run 门禁：每步 schema 校验（比 evals 更早——evals 测行为，dry-run 测结构）
     for wf in template.get("workflows", []):
         errors = dry_run_workflow(wf)
@@ -305,3 +311,74 @@ def dry_run_workflow(wf: Dict[str, Any]) -> List[str]:
             errors.append(f"[{sid}] 未知步骤类型 {stype!r}（支持 action_step/ai_step/query_step/parallel）")
 
     return errors
+
+
+def _resolve_model(template: Dict[str, Any]) -> Dict[str, Any]:
+    """将模板中所有 ai_step 的 model 替换为当前环境可用模型
+
+    forge prompt 教 AI 写 glm-5.1，但如果环境没有 glm-5.1，
+    用 ProviderRegistry 的第一个可用模型替换。
+    """
+    import copy
+    tpl = copy.deepcopy(template)
+
+    # 获取当前可用模型
+    preferred = "glm-5.1"
+    try:
+        from yuanzhu.gateway.providers import get_registry
+        models = get_registry().models
+        if preferred not in models and models:
+            preferred = models[0]
+    except Exception:
+        pass
+
+    for wf in tpl.get("workflows", []):
+        for step in wf.get("steps", []):
+            if isinstance(step, dict) and step.get("type") == "ai_step":
+                step["model"] = preferred
+            # parallel 组
+            if isinstance(step, dict) and "parallel" in step:
+                for sub in step["parallel"]:
+                    if isinstance(sub, dict) and sub.get("type") == "ai_step":
+                        sub["model"] = preferred
+
+    return tpl
+
+
+def _inject_smoke_evals(template: Dict[str, Any]) -> Dict[str, Any]:
+    """外部实测反馈：AI 生成的 evals 只测 staged-write 机制，不测数据流。
+    确定性地为每个 workflow 注入冒烟用例——真跑工作流（AI mock），验证参数传递/步骤衔接/动作落库。
+
+    参数自动推导：扫描步骤中所有 $params.X 引用，填 eval- 前缀占位值
+    （eval- 前缀同时是评测副作用清理的识别标记）。
+    """
+    import re as _re
+    evals = template.setdefault("evals", [])
+    existing_names = {c.get("name") for c in evals if isinstance(c, dict)}
+    for wf in template.get("workflows", []):
+        wf_name = wf.get("name") or wf.get("id") or "workflow"
+        case_name = f"smoke-{wf_name}"
+        if case_name in existing_names:
+            continue
+        # 收集 $params.X 引用
+        refs = set()
+        text = _json_dumps_safe(wf)
+        for m in _re.finditer(r"\$params\.([A-Za-z_][\w]*)", text):
+            refs.add(m.group(1))
+        params = {k: f"eval-smoke-{k}" for k in sorted(refs)}
+        steps_done = len(wf.get("steps", []))
+        evals.append({
+            "name": case_name,
+            "steps": [
+                {"workflow": wf_name, "params": params,
+                 "expect": {"no_error": True, "steps_done": steps_done}},
+                {"approve_all": {}},
+            ],
+            "expect": {"status": "applied"},
+        })
+    return template
+
+
+def _json_dumps_safe(obj) -> str:
+    import json
+    return json.dumps(obj, ensure_ascii=False, default=str)

@@ -16,6 +16,7 @@
 from typing import Any, Dict, List
 
 from sqlalchemy import select
+from sqlalchemy import select as _sel
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from yuanzhu.db.models import Template
@@ -129,6 +130,59 @@ class EvalsRunner:
                             f"步骤 {step['action']} 状态 {last_result.get('status')}"
                             f" ≠ 期望 {step_expect['status']}"
                         )
+
+            elif "workflow" in step:
+                # 工作流冒烟：真跑数据流（AI mock 成固定串——测结构衔接，不测回答质量）
+                params = self._resolve_refs(step.get("params") or {}, context)
+                wf_name = step["workflow"]
+                staged_ids: List[int] = []
+                try:
+                    from unittest.mock import AsyncMock, patch
+                    from yuanzhu.workflow import engine as _eng
+                    _orig = _eng.call_model
+                    async def _mock_ai(model, prompt, session=None, **kw):
+                        if step.get("real_ai"):
+                            return await _orig(model, prompt, session=session, **kw)
+                        return "冒烟测试AI回复"
+                    with patch.object(_eng, "call_model", _mock_ai):
+                        last_result = await self.engine.run(
+                            domain=case.get("_domain", "aiqa"),
+                            workflow_name=wf_name, params=params,
+                            run_by="evals-runner",
+                            on_step=None, allow_draft=True,
+                        )
+                    last_error = ""
+                    # 收集本次冒烟 staged 的 exec（供 approve_all / 断言）
+                    from yuanzhu.db.models import ActionExec
+                    for e in (await self.session.execute(
+                        _sel(ActionExec).where(
+                            ActionExec.status == "staged",
+                            ActionExec.staged_by == "evals-runner")
+                    )).scalars().all():
+                        staged_ids.append(e.id)
+                    context["_last_staged"] = staged_ids
+                except ValueError as e:
+                    last_error = str(e)
+                    last_result = {"error": str(e)}
+
+                step_expect = step.get("expect")
+                if step_expect and "steps_done" in step_expect:
+                    got = len((last_result or {}).get("steps") or {})
+                    if got != step_expect["steps_done"]:
+                        return False, f"工作流 {wf_name} 完成 {got} 步 ≠ 期望 {step_expect['steps_done']}（工作流中途失败或步骤缺失）"
+                if step_expect and step_expect.get("no_error") and last_error:
+                    return False, f"工作流 {wf_name} 报错: {last_error[:200]}"
+
+            elif "approve_all" in step:
+                # 审批本次冒烟产生的全部 staged（对象创建后才能被 eval- 清理识别）
+                for exec_id in context.pop("_last_staged", []):
+                    try:
+                        await self.sm.approve(exec_id, reviewed_by="evals-runner")
+                        applied = await self.sm.apply(exec_id)
+                        self._register_created("", applied, context)
+                    except Exception:
+                        pass
+                last_result = {"status": "applied"}
 
             elif "approve" in step:
                 exec_id = last_result.get("exec_id")

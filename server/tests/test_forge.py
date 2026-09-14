@@ -61,7 +61,10 @@ async def test_forge_publishes_when_evals_pass(db_session, monkeypatch):
     result = await forge_template(db_session, "管理每日待办任务")
 
     assert result["status"] == "published"
-    assert result["evals"]["passed"] == result["evals"]["total"] == 1
+    # v0.1.9：注入冒烟用例（每个 workflow 一个）——总数 = 原用例 + 工作流数
+    assert result["evals"]["total"] == 2
+    assert result["evals"]["passed"] == 2
+    assert result["evals"]["failed"] == 0
     # 目录已生成（可人工微调）
     assert (FORGE_ROOT / "forge-test" / "manifest.yaml").is_file()
     assert (FORGE_ROOT / "forge-test" / "evals" / "cases.yaml").is_file()
@@ -107,3 +110,24 @@ async def test_forge_requires_evals(db_session, monkeypatch):
 
     with pytest.raises(ValueError, match="evals"):
         await forge_template(db_session, "描述")
+
+
+async def test_smoke_eval_blocks_broken_dataflow(db_session, monkeypatch):
+    """v0.1.9 冒烟守门负例：工作流引用不存在的动作/参数链断裂 → 冒烟失败 → 留草稿。
+    外部实测反馈：旧 evals 只测 staged-write 机制，数据流坏模板照样 2/2 通过。"""
+    import copy
+    import yuanzhu.template.forge as forge_mod
+
+    broken = copy.deepcopy(GOOD_TEMPLATE)
+    broken["manifest"]["name"] = "forge-broken"
+    broken["workflows"][0]["steps"][0]["action"] = "NoSuchAction"  # 数据流断裂
+
+    async def fake_gen(description):
+        return broken
+    monkeypatch.setattr(forge_mod, "generate_template_json", fake_gen)
+
+    result = await forge_template(db_session, "坏数据流模板")
+
+    assert result["status"] == "draft"
+    assert result["evals"]["failed"] >= 1
+    assert any("smoke" in f for f in result["evals"]["failures"])
