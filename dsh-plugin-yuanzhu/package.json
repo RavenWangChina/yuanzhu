@@ -1,0 +1,10 @@
+{
+  "name": "dsh-plugin-yuanzhu",
+  "version": "0.1.0",
+  "description": "元铸工坊 SOSOFAST dsh 插件——治理层接入：读/写提交(staged)/forge 铸模板。审批不穿透给 agent。",
+  "main": "index.js",
+  "keywords": ["dsh", "dsh-plugin", "yuanzhu", "staged-writes", "mcp", "governance"],
+  "license": "AGPL-3.0",
+  "repository": "https://github.com/RavenWangChina/yuanzhu",
+  "homepage": "https://github.com/RavenWangChina/yuanzhu#readme"
+}
