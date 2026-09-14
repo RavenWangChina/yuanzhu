@@ -12,6 +12,8 @@ from yuanzhu.api.staged import router as staged_router
 from yuanzhu.api.core import router as core_router
 from yuanzhu.gateway.router import router as gateway_router
 from yuanzhu.api.dialog import router as dialog_router
+# 确保 Proposition 表在 init_db 时创建
+from yuanzhu.inference.engine import Proposition  # noqa: F401
 
 
 @asynccontextmanager

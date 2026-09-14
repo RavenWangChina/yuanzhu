@@ -344,6 +344,13 @@ async def run_workflow_async(req: WorkflowRunRequest):
     async def _runner():
         try:
             async with async_session_factory() as session:
+                from yuanzhu.config import settings as _cfg
+                if _cfg.bootstrap_enabled:
+                    from yuanzhu.db.models import BehaviorLog as _BL
+                    session.add(_BL(actor=req.run_by, action="ask", target_domain=req.domain,
+                                   target_name=req.workflow,
+                                   detail_json={"question": str(req.params)[:200]}))
+                    await session.commit()
                 engine = WorkflowEngine(session)
                 result = await engine.run(
                     domain=req.domain, workflow_name=req.workflow,
