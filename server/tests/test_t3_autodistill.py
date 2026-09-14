@@ -6,6 +6,19 @@ from yuanzhu.main import app
 from yuanzhu.db.database import get_db
 from yuanzhu.template.store import TemplateStore
 
+
+def mcp_call_payload(method: str, params: dict | None = None, req_id: int = 1) -> dict:
+    """标准 MCP JSON-RPC 请求体"""
+    return {"jsonrpc": "2.0", "id": req_id, "method": method, "params": params or {}}
+
+
+def mcp_unpack(resp_json: dict) -> dict:
+    """解开 tools/call result.content[0].text"""
+    import json as _json
+    content = (resp_json or {}).get("result", {}).get("content", [])
+    return _json.loads(content[0].get("text", "{}")) if content else {}
+
+
 METAFLOW_DIR = Path(__import__("yuanzhu.__init__", fromlist=["__file__"]).__file__).parent / "templates" / "metaflow"
 
 
@@ -34,11 +47,9 @@ async def client(db_session, monkeypatch):
 async def test_saveanswer_is_l1_autoapplied(client, db_session):
     """v0.1.3 语义：SaveAnswer 是 L1——答案自动入库（不点采纳也可用），
     采纳与沉淀链路由 test_autosave 的 adopt 用例覆盖"""
-    resp = await client.post("/mcp", json={
-        "method": "tools/call",
-        "params": {"name": "execute_metaflow_saveanswer",
-                   "arguments": {"question": "该不该自建中台",
-                                 "content": "【结论】分情况…"}},
-    }, headers={"X-Agent-ID": "t"})
+    resp = await client.post("/mcp", json=mcp_call_payload("tools/call", {
+        "name": "execute_metaflow_saveanswer",
+        "arguments": {"question": "该不该自建中台",
+                      "content": "【结论】分情况…"}}), headers={"X-Agent-ID": "t"})
     assert resp.status_code == 200
-    assert resp.json()["status"] == "applied", "SaveAnswer 应为 L1 自动入库"
+    assert mcp_unpack(resp.json())["status"] == "applied", "SaveAnswer 应为 L1 自动入库"

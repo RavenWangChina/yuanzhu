@@ -10,6 +10,19 @@ from yuanzhu.models.object import ObjectTypeCreate, ObjectCreate
 from yuanzhu.models.action import ActionTypeCreate
 
 
+def mcp_call_payload(method: str, params: dict | None = None, req_id: int = 1) -> dict:
+    """标准 MCP JSON-RPC 请求体"""
+    return {"jsonrpc": "2.0", "id": req_id, "method": method, "params": params or {}}
+
+
+def mcp_unpack(resp_json: dict) -> dict:
+    """解开 tools/call result.content[0].text"""
+    import json as _json
+    content = (resp_json or {}).get("result", {}).get("content", [])
+    return _json.loads(content[0].get("text", "{}")) if content else {}
+
+
+
 # ---------- 工具生成 ----------
 
 async def test_generate_query_tool(db_session, sample_object_type):
@@ -62,9 +75,9 @@ async def client(db_session):
 
 
 async def test_mcp_tools_list(client):
-    resp = await client.post("/mcp", json={"method": "tools/list", "params": {}})
+    resp = await client.post("/mcp", json=mcp_call_payload("tools/list"))
     assert resp.status_code == 200
-    names = [t["name"] for t in resp.json()["tools"]]
+    names = [t["name"] for t in resp.json()["result"]["tools"]]
     assert "list_pending_approvals" in names
 
 
@@ -75,12 +88,10 @@ async def test_mcp_query_objects_flow(client, db_session, sample_object_type):
         type_id=sample_object_type.id,
         properties={"title": "MCP 查的 Bug", "status": "Open"},
     ))
-    resp = await client.post("/mcp", json={
-        "method": "tools/call",
-        "params": {"name": "query_test_bug", "arguments": {"filter": {"status": "Open"}}},
-    })
+    resp = await client.post("/mcp", json=mcp_call_payload("tools/call",
+        {"name": "query_test_bug", "arguments": {"filter": {"status": "Open"}}}))
     assert resp.status_code == 200
-    data = resp.json()
+    data = mcp_unpack(resp.json())
     assert len(data["objects"]) >= 1
     assert data["objects"][0]["properties"]["title"] == "MCP 查的 Bug"
 
@@ -92,15 +103,12 @@ async def test_mcp_execute_action_stages(client, db_session, sample_object_type,
         type_id=sample_object_type.id,
         properties={"title": "MCP Bug", "status": "Open", "priority": 1},
     ))
-    resp = await client.post("/mcp", json={
-        "method": "tools/call",
-        "params": {
-            "name": "execute_test_changepriority",
-            "arguments": {"object_id": bug.id, "priority": 5},
-        },
-    }, headers={"X-Agent-ID": "claude-code-agent"})
+    resp = await client.post("/mcp", json=mcp_call_payload("tools/call", {
+        "name": "execute_test_changepriority",
+        "arguments": {"object_id": bug.id, "priority": 5},
+    }), headers={"X-Agent-ID": "claude-code-agent"})
     assert resp.status_code == 200
-    data = resp.json()
+    data = mcp_unpack(resp.json())
     assert data["status"] == "staged"
     assert "exec_id" in data
     assert "待" in data["message"]
@@ -118,13 +126,14 @@ async def test_mcp_query_filters(db_session, sample_object_type, client):
     resp = await client.post("/mcp", json={
         "method": "tools/call",
         "params": {"name": "query_test_bug", "arguments": {"filter": {"status": "Open"}}},
-    })
-    titles = [o["properties"]["title"] for o in resp.json()["objects"]]
+    }) if False else await client.post("/mcp", json=mcp_call_payload("tools/call",
+        {"name": "query_test_bug", "arguments": {"filter": {"status": "Open"}}}))
+    titles = [o["properties"]["title"] for o in mcp_unpack(resp.json())["objects"]]
     assert "开" in titles and "关" not in titles
 
 
 async def test_mcp_unknown_tool(client):
-    resp = await client.post("/mcp", json={
-        "method": "tools/call", "params": {"name": "no_such_tool", "arguments": {}},
-    })
-    assert "error" in resp.json()
+    resp = await client.post("/mcp", json=mcp_call_payload("tools/call",
+        {"name": "no_such_tool", "arguments": {}}))
+    result = resp.json().get("result", {})
+    assert result.get("isError") is True

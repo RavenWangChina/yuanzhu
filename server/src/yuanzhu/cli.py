@@ -60,6 +60,24 @@ async def _post(client, path, body, ctx: Ctx):
     return resp
 
 
+def _mcp_body(method: str, params: dict | None = None, req_id: int = 1) -> dict:
+    """标准 MCP JSON-RPC 请求体"""
+    return {"jsonrpc": "2.0", "id": req_id, "method": method, "params": params or {}}
+
+
+def _mcp_result(resp) -> dict:
+    """解开 JSON-RPC result；tools/call 再解 content[0].text"""
+    import json as _json
+    r = (resp.json() or {}).get("result", {})
+    content = r.get("content")
+    if content:
+        try:
+            return _json.loads(content[0].get("text", "{}"))
+        except Exception:
+            return {}
+    return r
+
+
 def _detail(resp) -> str:
     try:
         return resp.json().get("detail", resp.text[:200])
@@ -87,14 +105,13 @@ async def cmd_status(client, args, ctx):
 
 
 async def cmd_query(client, args, ctx):
-    resp = await _post(client, "/mcp", {
-        "method": "tools/call",
-        "params": {"name": f"query_{args.domain}_{args.type}".lower(),
-                   "arguments": {"filter": _parse_filter(args.filter), "limit": args.limit}},
-    }, ctx)
+    resp = await _post(client, "/mcp", _mcp_body("tools/call", {
+        "name": f"query_{args.domain}_{args.type}".lower(),
+        "arguments": {"filter": _parse_filter(args.filter), "limit": args.limit}},
+    ), ctx)
     if ctx.exit_code:
         return
-    objects = resp.json().get("objects", [])
+    objects = _mcp_result(resp).get("objects", [])
     if not objects:
         ctx.print("（无匹配对象）")
         return
@@ -236,10 +253,10 @@ async def cmd_import(client, args, ctx):
 
 
 async def cmd_mcp_tools(client, args, ctx):
-    resp = await _post(client, "/mcp", {"method": "tools/list", "params": {}}, ctx)
+    resp = await _post(client, "/mcp", _mcp_body("tools/list"), ctx)
     if ctx.exit_code:
         return
-    for t in resp.json().get("tools", []):
+    for t in _mcp_result(resp).get("tools", []):
         ctx.print(f"{t['name']}  — {t.get('description', '')[:60]}")
 
 

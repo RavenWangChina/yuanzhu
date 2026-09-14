@@ -7,6 +7,19 @@ from yuanzhu.main import app
 from yuanzhu.db.database import get_db
 from yuanzhu.template.store import TemplateStore
 
+
+def mcp_call_payload(method: str, params: dict | None = None, req_id: int = 1) -> dict:
+    """标准 MCP JSON-RPC 请求体"""
+    return {"jsonrpc": "2.0", "id": req_id, "method": method, "params": params or {}}
+
+
+def mcp_unpack(resp_json: dict) -> dict:
+    """解开 tools/call result.content[0].text"""
+    import json as _json
+    content = (resp_json or {}).get("result", {}).get("content", [])
+    return _json.loads(content[0].get("text", "{}")) if content else {}
+
+
 AIQA_DIR = Path(__import__("yuanzhu.__init__", fromlist=["__file__"]).__file__).parent / "templates" / "aiqa"
 
 
@@ -21,11 +34,10 @@ async def test_pending_includes_friendly_description(db_session):
     try:
         async with AsyncClient(transport=transport, base_url="http://t") as c:
             # 造一条待审（CreateBug staged）
-            resp = await c.post("/mcp", json={
-                "method": "tools/call",
-                "params": {"name": "execute_aiqa_createbug",
-                           "arguments": {"title": "友好描述测试", "severity": "minor"}},
-            }, headers={"X-Agent-ID": "t"})
+            resp = await c.post("/mcp", json=mcp_call_payload("tools/call",
+                {"name": "execute_aiqa_createbug",
+                 "arguments": {"title": "友好描述测试", "severity": "minor"}}),
+                headers={"X-Agent-ID": "t"})
             assert resp.status_code == 200
 
             resp = await c.get("/api/staged/pending")

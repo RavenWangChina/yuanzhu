@@ -4,7 +4,7 @@
 
 **按企业自身的工作习惯，把各领域的最佳实践定向复刻成 AI 工作流资产——像软件一样被开发、分发、使用、沉淀、进化，全员开箱即用。**
 
-## 当前状态：v0.1.6 已上架 [PyPI](https://pypi.org/project/yuanzhu/)（技术验证期）
+## 当前状态：v0.1.9 已上架 [PyPI](https://pypi.org/project/yuanzhu/)（技术验证期）
 
 **160 测试全绿**。装完即用的三层能力：
 
@@ -41,6 +41,27 @@ python -m venv .venv && .venv/Scripts/pip install -e ".[dev]"
 Web 控制台前端源码在 `web/`（Vite+Vue3，构建产物由 FastAPI 托管）；模型接入零配置：网关自动导入 dsh 已配的 provider（天翼云等，OpenAI 兼容协议全家桶）；自定义端点用 `YUANZHU_PROVIDER_n_*` 环境变量；估费价目用 `YUANZHU_MODEL_PRICES`（JSON）。
 
 打开首页即**深度问答**：问一个问题自动走六步流水线（澄清→双视角并行→审查→裁决→人审采纳）。
+
+## 在 Claude Code 里用（插件市场）
+
+元铸工坊可作为 Claude Code 插件安装——本体层经 MCP 直连，配两个技能（forge 铸模板 / 待审审批）：
+
+```bash
+# 1. 启动元铸工坊服务（另一个终端）
+pip install yuanzhu
+yuanzhu-server          # 默认 http://127.0.0.1:8600
+
+# 2. 添加插件市场并安装
+claude plugin marketplace add RavenWangChina/yuanzhu
+claude plugin install yuanzhu@yuanzhu
+
+# 3. 重启 Claude 会话，然后直接说：
+#    "把我每周汇总周报这件事铸成工作流"   → 触发 forge 技能
+#    "看看有什么待审的"                  → 触发审批技能
+```
+
+远程服务或带 token 场景用环境变量覆盖：`YUANZHU_MCP_URL` / `YUANZHU_TOKEN`。
+任意 MCP 客户端也可直连 `http://127.0.0.1:8600/mcp`（标准 MCP Streamable HTTP）。
 
 ## 文档导航
 

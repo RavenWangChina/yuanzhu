@@ -11,6 +11,19 @@ from httpx import AsyncClient, ASGITransport
 from yuanzhu.main import app
 from yuanzhu.db.database import get_db
 
+
+def mcp_call_payload(method: str, params: dict | None = None, req_id: int = 1) -> dict:
+    """标准 MCP JSON-RPC 请求体"""
+    return {"jsonrpc": "2.0", "id": req_id, "method": method, "params": params or {}}
+
+
+def mcp_unpack(resp_json: dict) -> dict:
+    """解开 tools/call result.content[0].text"""
+    import json as _json
+    content = (resp_json or {}).get("result", {}).get("content", [])
+    return _json.loads(content[0].get("text", "{}")) if content else {}
+
+
 AGENT_HEADERS = {"X-Agent-ID": "claude-code-external-agent"}
 
 
@@ -27,10 +40,14 @@ async def client(db_session):
 
 
 async def _mcp(client: AsyncClient, method: str, params: dict, headers=None) -> dict:
-    resp = await client.post("/mcp", json={"method": method, "params": params},
+    resp = await client.post("/mcp", json=mcp_call_payload(method, params),
                              headers=headers or AGENT_HEADERS)
-    assert resp.status_code == 200
-    return resp.json()
+    assert resp.status_code == 200, resp.text
+    r = resp.json()
+    # tools/call 解包 content；tools/list 直接给 result
+    if method == "tools/call":
+        return mcp_unpack(r)
+    return r.get("result", r)
 
 
 async def test_h7_end_to_end(client):

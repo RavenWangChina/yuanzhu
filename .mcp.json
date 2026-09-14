@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "yuanzhu": {
+      "type": "http",
+      "url": "${YUANZHU_MCP_URL:-http://127.0.0.1:8600/mcp}",
+      "headers": {
+        "Authorization": "Bearer ${YUANZHU_TOKEN:-}"
+      }
+    }
+  }
+}

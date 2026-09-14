@@ -6,6 +6,19 @@ from yuanzhu.main import app
 from yuanzhu.db.database import get_db
 
 
+def mcp_call_payload(method: str, params: dict | None = None, req_id: int = 1) -> dict:
+    """标准 MCP JSON-RPC 请求体"""
+    return {"jsonrpc": "2.0", "id": req_id, "method": method, "params": params or {}}
+
+
+def mcp_unpack(resp_json: dict) -> dict:
+    """解开 tools/call result.content[0].text"""
+    import json as _json
+    content = (resp_json or {}).get("result", {}).get("content", [])
+    return _json.loads(content[0].get("text", "{}")) if content else {}
+
+
+
 async def _client(db_session, headers=None):
     async def override():
         yield db_session
@@ -76,9 +89,9 @@ async def test_mcp_requires_token(db_session, monkeypatch):
     main_mod._auth_singleton = None
     try:
         async with await _client(db_session) as c:
-            r = await c.post("/mcp", json={"method": "tools/list", "params": {}})
+            r = await c.post("/mcp", json=mcp_call_payload("tools/list"))
             assert r.status_code == 401
-            r = await c.post("/mcp", json={"method": "tools/list", "params": {}},
+            r = await c.post("/mcp", json=mcp_call_payload("tools/list"),
                              headers={"Authorization": "Bearer sec-123",
                                       "X-Agent-ID": "agent"})
             assert r.status_code == 200

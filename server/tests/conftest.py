@@ -82,3 +82,4 @@ async def sample_action_type(db_session, sample_object_type):
     await db_session.commit()
     await db_session.refresh(action_type)
     return action_type
+

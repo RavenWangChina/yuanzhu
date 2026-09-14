@@ -1,0 +1,16 @@
+{
+  "name": "yuanzhu",
+  "description": "元铸工坊 SOSOFAST——把重复工作铸成可治理的 AI 工作流资产（staged writes + evals 守门 + 三记忆推衍）",
+  "version": "0.1.9",
+  "author": {
+    "name": "RavenWangChina",
+    "url": "https://github.com/RavenWangChina"
+  },
+  "commands": [
+    "./commands/yuanzhu.md"
+  ],
+  "homepage": "https://github.com/RavenWangChina/yuanzhu",
+  "repository": "https://github.com/RavenWangChina/yuanzhu",
+  "license": "AGPL-3.0",
+  "keywords": ["workflow", "mcp", "staged-writes", "forge", "knowledge", "governance"]
+}
