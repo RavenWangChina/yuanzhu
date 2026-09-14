@@ -2,6 +2,18 @@
 
 本项目所有显著变更记录于此。格式参照 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，版本遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [0.1.6] · 2026-09-14（自举+推衍引擎）
+
+### Added（主动创造·主动挖掘·主动学习，160 测试全绿）
+- **自举开关**：`POST /api/bootstrap/toggle` — 开=行为记录+任务治理激活；关=不记录但不影响 deep-answer/forge
+- **行为埋点**：ask/adopt/approve/reject/forge 五类行为自动记录到 BehaviorLog（Episodic Memory）
+- **推衍引擎**：`POST /api/inference/run` — 三记忆系统（行为+知识+技能）交叉分析 → 产出 Proposition
+- **Proposition 端点**：`GET /api/propositions` + accept（按类型路由：workflow_suggestion→forge / knowledge_gap→DistillInsight）+ dismiss（学习信号）
+- **能力地图页面**：`/capability` — 4 域 Tab / 对象类型+属性 / 动作+L1L2 分级 / 工作流+步骤 / 评测
+- **知识库页面**（0.1.5 遗漏记录）：`/knowledge` — 洞见 / 答案 / 域对象 / forge YAML
+- **dev 模板**：DevTask（意图确认门）+ Decision（技术决策 append-only）——自举基础设施
+- **E2E 验证**：问 2 问题 → 推衍 7s 产出 3 条提议 → 采纳触发 forge 上架 code-review-advisor
+
 ## [0.1.5] · 2026-09-11（管理体验 + forge 硬化）
 
 ### Fixed（dogfood 第二波发现，155 测试全绿）
