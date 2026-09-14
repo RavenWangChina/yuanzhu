@@ -5,6 +5,7 @@ import Staged from './views/Staged.vue'
 import Usage from './views/Usage.vue'
 import Knowledge from './views/Knowledge.vue'
 import CapabilityMap from './views/CapabilityMap.vue'
+import Notifications from './views/Notifications.vue'
 import Chat from './views/Chat.vue'
 
 const router = createRouter({
@@ -18,6 +19,7 @@ const router = createRouter({
     { path: '/usage', component: Usage },
     { path: '/knowledge', component: Knowledge },
     { path: '/capability', component: CapabilityMap },
+    { path: '/notifications', component: Notifications },
   ],
 })
 

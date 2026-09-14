@@ -151,6 +151,19 @@ async def adopt_answer(exec_id: int, body: dict, db: AsyncSession = Depends(get_
     if not answer_obj:
         raise HTTPException(status_code=400, detail="该执行没有关联答案对象")
 
+    # v0.1.7 自动推衍：采纳后异步触发（不阻塞本次请求）
+    import asyncio as _aio
+    async def _auto_inference():
+        try:
+            from yuanzhu.db.database import async_session_factory as _sf
+            from yuanzhu.inference.engine import run_inference as _ri
+            async with _sf() as _ses:
+                await _ri(_ses)
+                await _ses.commit()
+        except Exception:
+            pass
+    _aio.ensure_future(_auto_inference())
+
     # 采纳即沉淀：自动提炼洞见（staged 待审轻确认）
     try:
         from yuanzhu.workflow.engine import WorkflowEngine

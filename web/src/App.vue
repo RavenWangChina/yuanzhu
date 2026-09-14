@@ -8,6 +8,7 @@
       <router-link class="nav-item" to="/nodes">节点拓扑</router-link>
       <router-link class="nav-item" to="/knowledge">知识库</router-link>
       <router-link class="nav-item" to="/capability">能力地图</router-link>
+      <router-link class="nav-item" to="/notifications">通知</router-link>
       <router-link class="nav-item" to="/usage">用量与审计</router-link>
     </nav>
     <main class="main">
