@@ -15,6 +15,16 @@ from yuanzhu.template.store import TemplateStore
 router = APIRouter(prefix="/api", tags=["core"])
 
 
+async def _log_behavior(db, actor, action, domain=None, target=None, detail=None):
+    """行为记录（只在 bootstrap_enabled 时记录）"""
+    from yuanzhu.config import settings
+    if not settings.bootstrap_enabled:
+        return
+    from yuanzhu.db.models import BehaviorLog
+    db.add(BehaviorLog(actor=actor, action=action, target_domain=domain,
+                       target_name=target, detail_json=detail))
+
+
 # ---------- 节点 ----------
 
 @router.post("/nodes/register", response_model=NodeResponse)
@@ -215,6 +225,7 @@ async def forge_template_endpoint(body: ForgeRequest, db: AsyncSession = Depends
     if len(body.description.strip()) < 6:
         raise HTTPException(status_code=400, detail="描述太短，说说你要处理的日常工作（谁/做什么/产出什么）")
     from yuanzhu.template.forge import forge_template
+    await _log_behavior(db, "web-user", "forge", detail={"description": body.description[:200]})
     try:
         return await forge_template(db, body.description.strip())
     except ValueError as e:
@@ -359,6 +370,8 @@ async def workflow_status(task_id: str):
 async def run_workflow(req: WorkflowRunRequest, db: AsyncSession = Depends(get_db)):
     """触发工作流（单机模式进程内执行；ai_step 走网关、action_step 走 staged）"""
     from yuanzhu.workflow.engine import WorkflowEngine
+    await _log_behavior(db, req.run_by, "ask", domain=req.domain,
+                         target=req.workflow, detail={"question": str(req.params)[:200]})
     try:
         return await WorkflowEngine(db).run(
             domain=req.domain, workflow_name=req.workflow,
@@ -366,3 +379,35 @@ async def run_workflow(req: WorkflowRunRequest, db: AsyncSession = Depends(get_d
         )
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+
+# ---------- 自举开关（v0.1.6） ----------
+
+@router.get("/bootstrap/status")
+async def bootstrap_status():
+    from yuanzhu.config import settings
+    return {"enabled": settings.bootstrap_enabled}
+
+
+@router.post("/bootstrap/toggle")
+async def bootstrap_toggle():
+    from yuanzhu.config import settings
+    settings.bootstrap_enabled = not settings.bootstrap_enabled
+    return {"enabled": settings.bootstrap_enabled, "message": f"自举已{'开启' if settings.bootstrap_enabled else '关闭'}"}
+
+
+@router.get("/behavior/recent")
+async def behavior_recent(limit: int = 50, db: AsyncSession = Depends(get_db)):
+    """最近行为日志"""
+    from sqlalchemy import select as _sel
+    from yuanzhu.db.models import BehaviorLog
+    result = await db.execute(
+        _sel(BehaviorLog).order_by(BehaviorLog.created_at.desc()).limit(min(limit, 200)))
+    return [
+        {
+            "id": b.id, "actor": b.actor, "action": b.action,
+            "target_domain": b.target_domain, "target_name": b.target_name,
+            "detail": b.detail_json, "created_at": b.created_at.isoformat() if b.created_at else None,
+        }
+        for b in result.scalars().all()
+    ]

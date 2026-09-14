@@ -244,3 +244,16 @@ class ModelUsage(Base):
     completion_tokens = Column(Integer, nullable=False, default=0)
     estimated_cost = Column(Float, nullable=False, default=0.0)
     created_at = Column(DateTime, default=utcnow, nullable=False, index=True)
+
+
+class BehaviorLog(Base):
+    """行为日志（Episodic Memory——推衍引擎的燃料）"""
+    __tablename__ = "behavior_log"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    actor = Column(String(100), nullable=False, index=True)       # 谁做的
+    action = Column(String(50), nullable=False, index=True)       # ask/adopt/forge/approve/reject
+    target_domain = Column(String(100), nullable=True)
+    target_name = Column(String(200), nullable=True)
+    detail_json = Column(JSON, nullable=True)
+    created_at = Column(DateTime, default=utcnow, nullable=False, index=True)

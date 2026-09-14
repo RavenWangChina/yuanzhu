@@ -9,7 +9,8 @@ class Settings(BaseSettings):
     mode: str = "standalone"
     debug: bool = False
     base_url: str = "http://127.0.0.1:8600"   # CLI 连中控
-    api_token: str = ""    # 非空=启用 Bearer 认证（部署前必配；本机留空零摩擦）
+    api_token: str = ""
+    bootstrap_enabled: bool = False   # v0.1.6 自举开关：开=行为记录+任务治理激活    # 非空=启用 Bearer 认证（部署前必配；本机留空零摩擦）
 
     # 企微对话学习（管理员在企微后台自助配置后填入 .env）
     wecom_token: str = ""          # 回调验签 token
