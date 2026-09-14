@@ -119,7 +119,8 @@ function behaviorText(b: any) {
 
 function fmtTime(t: string) {
   if (!t) return ''
-  const d = new Date(t)
+  // 后端返回 UTC 无时区标记，追加 Z 让 JS 正确解析
+  const d = new Date(t.endsWith('Z') || t.includes('+') ? t : t + 'Z')
   const diff = (Date.now() - d.getTime()) / 1000
   if (diff < 60) return '刚刚'
   if (diff < 3600) return `${Math.floor(diff / 60)} 分钟前`
@@ -135,7 +136,7 @@ function showToast(msg: string, isErr = false) {
 
 async function toggleBootstrap() {
   try {
-    const r = await api.post('/bootstrap/toggle', {})
+    const r = await api.post('/api/bootstrap/toggle', {})
     bootstrapEnabled.value = r.enabled
     showToast(r.message)
   } catch (e: any) { showToast(String(e), true) }
@@ -143,7 +144,7 @@ async function toggleBootstrap() {
 
 async function acceptProp(id: number) {
   try {
-    const r = await api.post(`/propositions/${id}/accept`, {})
+    const r = await api.post(`/api/propositions/${id}/accept`, {})
     showToast(`已采纳：${r.action || '完成'}`)
     await loadProps()
   } catch (e: any) { showToast(String(e), true) }
@@ -151,7 +152,7 @@ async function acceptProp(id: number) {
 
 async function dismissProp(id: number) {
   try {
-    await api.post(`/propositions/${id}/dismiss`, {})
+    await api.post(`/api/propositions/${id}/dismiss`, {})
     showToast('已忽略')
     await loadProps()
   } catch (e: any) { showToast(String(e), true) }
@@ -160,31 +161,31 @@ async function dismissProp(id: number) {
 async function loadProps() {
   loadingProps.value = true
   try {
-    pendingProps.value = await api.get('/propositions?status=pending')
-    const accepted = await api.get('/propositions?status=accepted')
-    const dismissed = await api.get('/propositions?status=dismissed')
+    pendingProps.value = await api.get('/api/propositions?status=pending')
+    const accepted = await api.get('/api/propositions?status=accepted')
+    const dismissed = await api.get('/api/propositions?status=dismissed')
     resolvedProps.value = [...accepted, ...dismissed]
   } finally { loadingProps.value = false }
 }
 
 onMounted(async () => {
   try {
-    const st = await api.get('/bootstrap/status')
+    const st = await api.get('/api/bootstrap/status')
     bootstrapEnabled.value = st.enabled
     await Promise.all([loadProps(), loadBehaviors(), loadStats()])
   } catch (e) { console.error(e) }
 })
 
 async function loadBehaviors() {
-  try { behaviors.value = await api.get('/behavior/recent?limit=15') } catch {}
+  try { behaviors.value = await api.get('/api/behavior/recent?limit=15') } catch {}
 }
 
 async function loadStats() {
   try {
-    const objs = await api.get('/objects?domain=metaflow&limit=100')
+    const objs = await api.get('/api/objects?domain=metaflow&limit=100')
     stats.value.insights = objs.filter((o: any) => o.object_type?.name === 'Insight').length
     stats.value.answers = objs.filter((o: any) => o.object_type?.name === 'Answer').length
-    const tpls = await api.get('/templates')
+    const tpls = await api.get('/api/templates')
     stats.value.templates = tpls.length
   } catch {}
 }
