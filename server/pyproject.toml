@@ -1,6 +1,6 @@
 [project]
 name = "yuanzhu"
-version = "0.1.9"
+version = "0.1.11"
 description = "元铸工坊 SOSOFAST——把最佳实践铸成可治理的 AI 工作流资产（AI 提议，人拍板）"
 readme = "README.md"
 license = { text = "AGPL-3.0" }
@@ -42,6 +42,7 @@ dev = [
 ]
 
 [project.scripts]
+yuanzhu-mcp = "yuanzhu.mcp_stdio:main"
 yuanzhu = "yuanzhu.cli:main"
 yuanzhu-server = "yuanzhu.server_main:main"
 

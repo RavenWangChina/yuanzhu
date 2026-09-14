@@ -32,3 +32,5 @@ CLI 同装：`yuanzhu status / pending / templates / forge "你的工作描述"`
 ## 许可
 
 AGPL-3.0。文档与源码：<https://github.com/RavenWangChina/yuanzhu>
+
+<!-- mcp-name: io.github.RavenWangChina/yuanzhu -->

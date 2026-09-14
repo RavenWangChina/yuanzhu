@@ -1,0 +1,17 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.RavenWangChina/yuanzhu",
+  "title": "元铸工坊 SOSOFAST (yuanzhu)",
+  "description": "Governed AI workflow assets: staged writes, evals-gated template forging, ontology via MCP.",
+  "version": "0.1.11",
+  "packages": [
+    {
+      "registryType": "pypi",
+      "identifier": "yuanzhu",
+      "version": "0.1.11",
+      "transport": {
+        "type": "stdio"
+      }
+    }
+  ]
+}

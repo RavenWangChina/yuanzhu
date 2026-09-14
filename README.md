@@ -98,3 +98,5 @@ claude plugin install yuanzhu@yuanzhu
 ## 致谢
 
 本项目引用了周志明（icyfenix）先生《设计机器学习应用系统》等外部来源，完整清单见 [docs/致谢与引用出处.md](docs/致谢与引用出处.md)。
+
+<!-- mcp-name: io.github.RavenWangChina/yuanzhu -->
