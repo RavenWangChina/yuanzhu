@@ -4,6 +4,7 @@ import Templates from './views/Templates.vue'
 import Staged from './views/Staged.vue'
 import Usage from './views/Usage.vue'
 import Knowledge from './views/Knowledge.vue'
+import CapabilityMap from './views/CapabilityMap.vue'
 import Chat from './views/Chat.vue'
 
 const router = createRouter({
@@ -16,6 +17,7 @@ const router = createRouter({
     { path: '/staged', component: Staged },
     { path: '/usage', component: Usage },
     { path: '/knowledge', component: Knowledge },
+    { path: '/capability', component: CapabilityMap },
   ],
 })
 
