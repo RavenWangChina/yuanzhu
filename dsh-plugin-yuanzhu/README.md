@@ -18,7 +18,7 @@
 
 ```bash
 # 前置：元铸工坊服务已启动（pip install yuanzhu && yuanzhu-server）
-dsh --profile <name> plugin add dsh-plugin-yuanzhu   # 从 npm
+dsh plugin --profile web add dsh-plugin-yuanzhu
 ```
 
 环境变量：
