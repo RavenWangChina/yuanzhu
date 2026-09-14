@@ -48,6 +48,12 @@ async def list_pending(db: AsyncSession = Depends(get_db)):
 async def approve(exec_id: int, req: ReviewRequest, db: AsyncSession = Depends(get_db)):
     """批准（自动应用 transform）；v0.1.3：采纳深度答案时自动触发洞见提炼（采纳即沉淀）"""
     sm = StagedStateMachine(db)
+    # v0.1.6 行为记录
+    from yuanzhu.config import settings as _cfg
+    if _cfg.bootstrap_enabled:
+        from yuanzhu.db.models import BehaviorLog as _BL
+        db.add(_BL(actor=req.reviewed_by, action="approve", target_name=str(exec_id),
+                   detail_json={"comment": (req.review_comment or "")[:100]}))
     try:
         exec = await sm.approve(exec_id, reviewed_by=req.reviewed_by, review_comment=req.review_comment)
         applied = await sm.apply(exec_id)
@@ -79,6 +85,11 @@ async def approve(exec_id: int, req: ReviewRequest, db: AsyncSession = Depends(g
 @router.post("/{exec_id}/reject", response_model=ActionExecResponse)
 async def reject(exec_id: int, req: RejectRequest, db: AsyncSession = Depends(get_db)):
     """拒绝（必须附理由）"""
+    from yuanzhu.config import settings as _cfg
+    if _cfg.bootstrap_enabled:
+        from yuanzhu.db.models import BehaviorLog as _BL
+        db.add(_BL(actor=req.reviewed_by, action="reject", target_name=str(exec_id),
+                   detail_json={"comment": req.review_comment[:100]}))
     try:
         return await StagedStateMachine(db).reject(
             exec_id, reviewed_by=req.reviewed_by, review_comment=req.review_comment

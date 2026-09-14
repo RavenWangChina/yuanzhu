@@ -137,6 +137,8 @@ async def adopt_answer(exec_id: int, body: dict, db: AsyncSession = Depends(get_
     adopted_by = (body or {}).get("adopted_by", "web-user")
     created_ids = (exec.exec_log_json or {}).get("created_object_ids", [])
     answer_obj = None
+    await _log_behavior(db, (body or {}).get("adopted_by", "unknown"), "adopt",
+                         domain="metaflow", target="answer", detail={"exec_id": exec_id})
     from sqlalchemy.orm.attributes import flag_modified
     for oid in created_ids:
         o = await db.get(Object, oid)
@@ -411,3 +413,91 @@ async def behavior_recent(limit: int = 50, db: AsyncSession = Depends(get_db)):
         }
         for b in result.scalars().all()
     ]
+
+
+# ---------- 推衍引擎（v0.1.6） ----------
+
+@router.post("/inference/run")
+async def run_inference_endpoint(db: AsyncSession = Depends(get_db)):
+    """触发推衍引擎（手动——后续可自动触发）"""
+    from yuanzhu.inference.engine import run_inference
+    try:
+        results = await run_inference(db)
+        return {"propositions": results, "count": len(results)}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"推衍失败: {e}")
+
+
+@router.get("/propositions")
+async def list_propositions(status: str = "pending", db: AsyncSession = Depends(get_db)):
+    """获取提议列表"""
+    from sqlalchemy import select as _sel
+    from yuanzhu.inference.engine import Proposition
+    result = await db.execute(
+        _sel(Proposition).where(Proposition.status == status).order_by(Proposition.created_at.desc()))
+    return [
+        {"id": p.id, "type": p.prop_type, "insight": p.insight,
+         "advice": p.advice, "deliverable_draft": p.deliverable_draft,
+         "confidence": p.confidence, "status": p.status,
+         "created_at": p.created_at.isoformat() if p.created_at else None}
+        for p in result.scalars().all()
+    ]
+
+
+@router.post("/propositions/{pid}/accept")
+async def accept_proposition(pid: int, db: AsyncSession = Depends(get_db)):
+    """采纳提议——按类型路由"""
+    from sqlalchemy import select as _sel
+    from yuanzhu.inference.engine import Proposition
+
+    prop = await db.get(Proposition, pid)
+    if not prop:
+        raise HTTPException(status_code=404, detail="提议不存在")
+
+    try:
+        if prop.prop_type == "workflow_suggestion" and prop.deliverable_draft:
+            # 只注册 draft（不自动上架——用户后续手动跑 evals）
+            from yuanzhu.template.forge import forge_template
+            result = await forge_template(db, prop.deliverable_draft)
+            prop.status = "accepted"
+            await db.flush()
+            return {"status": "accepted", "action": "forge_draft", "template": result.get("name")}
+
+        elif prop.prop_type == "knowledge_gap":
+            # 走 DistillInsight（staged 轻确认）
+            from yuanzhu.workflow.engine import WorkflowEngine
+            await WorkflowEngine(db).run_action(
+                domain="metaflow", action_name="DistillInsight",
+                params={"takeaway": prop.insight, "context": prop.advice or "",
+                        "source_question": "推衍引擎"},
+                run_by="inference",
+            )
+            prop.status = "accepted"
+            await db.flush()
+            return {"status": "accepted", "action": "distill_insight"}
+
+        else:
+            # pattern_insight / procedural_hint：纯展示
+            prop.status = "accepted"
+            await db.flush()
+            return {"status": "accepted", "action": "noted"}
+
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.post("/propositions/{pid}/dismiss")
+async def dismiss_proposition(pid: int, db: AsyncSession = Depends(get_db)):
+    """忽略提议（学习信号）"""
+    from yuanzhu.inference.engine import Proposition
+    prop = await db.get(Proposition, pid)
+    if not prop:
+        raise HTTPException(status_code=404, detail="提议不存在")
+
+    prop.status = "dismissed"
+    await db.flush()
+
+    # 记录学习信号
+    await _log_behavior(db, "user", "dismiss_proposition",
+                         target=prop.prop_type, detail={"insight": prop.insight[:100]})
+    return {"status": "dismissed"}
