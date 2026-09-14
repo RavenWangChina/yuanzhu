@@ -22,8 +22,8 @@
 
 ```bash
 # 一键启动（Python 3.11+；pip 包含 Web 控制台与全部内置模板）
-pip install yuanzhu
-yuanzhu-server                 # 打开 http://127.0.0.1:8600
+pip install yuanzhu             # 安装包（一条命令搞定，yuanzhu-server 是包自带的命令）
+yuanzhu-server                 # 启动服务 → 打开 http://127.0.0.1:8600
 ```
 
 首启自动注册内置模板（深度问答/AIQA 测试/会议追踪）；CLI 同装：`yuanzhu status / pending / templates / forge`。

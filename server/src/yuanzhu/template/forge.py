@@ -63,7 +63,8 @@ FORGE_PROMPT_PREFIX = """你是工作流模板架构师。把用户描述的工�
   action_step: {"id": "xx", "type": "action_step", "action": "动作名", "params": {"字段": "$params.参数名"}}
   ai_step: {"id": "xx", "type": "ai_step", "prompt_prefix": "稳定前缀", "prompt_var": "上游output名（不带$前缀）", "model": "glm-5.1", "output": "输出名", "expect_json": true|false}
   query_step: {"id": "xx", "type": "query_step", "object_type": "对象类型名", "filter": {"属性": "值"}, "output": "输出名"}
-  常见错误：query_step 的类型名放在 object_type 字段（不是 query.type）；prompt_var 直接写上游 output 名（不要 $steps.xxx.result 语法）"""
+  常见错误：query_step 的类型名放在 object_type 字段（不是 query.type）；prompt_var 直接写上游 output 名（不要 $steps.xxx.result 语法）
+  ⚠️ action_step 的 params 引用上游 ai_step 输出时，必须加 $ 前缀：{"summary": "$summary_text"}（不是 {"summary": "summary_text"}）——不带 $ 的字符串会被当作字面量"""
 
 
 async def generate_template_json(description: str) -> Dict[str, Any]:
@@ -282,6 +283,12 @@ def dry_run_workflow(wf: Dict[str, Any]) -> List[str]:
             for k, v in (step.get("params") or {}).items():
                 if isinstance(v, str) and v.startswith("$item."):
                     continue   # iterate_over 项引用合法
+                # v0.1.7: 裸字符串恰好匹配已知 output 名 → 疑似漏 $ 前缀
+                if isinstance(v, str) and not v.startswith("$") and v in outputs:
+                    errors.append(
+                        f"[{sid}] params.{k}={v!r} 疑似漏 $ 前缀——"
+                        f"{v!r} 是已知 output 名，应写 ${v!r}"
+                    )
                 if isinstance(v, str) and v.startswith("$"):
                     ref = v[1:]
                     if ref.startswith("params.") and ref[7:] not in params_names:
