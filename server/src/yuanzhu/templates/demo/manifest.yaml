@@ -1,0 +1,10 @@
+name: demo
+version: "0.2.0"
+domain: demo
+description: 演示域——新用户 30 秒理解 staged writes（AI 提交任务，人批准入库）
+author: MiaoYu
+
+hardening:
+  evals: true
+  audit: true
+  cost_metering: true

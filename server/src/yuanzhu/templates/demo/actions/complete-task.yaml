@@ -1,0 +1,15 @@
+# 演示动作：完成任务（改属性，L2 staged）
+name: CompleteDemoTask
+description_for_agent: 把演示任务标记为完成（写入待审，人批准后生效）
+autonomy_level: 2
+requires_staging: true
+params_schema:
+  type: object
+  properties:
+    object_id: {type: integer, description: 任务对象 ID}
+  required: [object_id]
+transform:
+  - set:
+      object_id: "from:params.object_id"
+      props:
+        status: "literal:done"

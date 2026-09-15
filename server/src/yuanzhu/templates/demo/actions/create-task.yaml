@@ -1,0 +1,19 @@
+# 演示动作：AI 建任务（L2 staged——待审中心见）
+name: CreateDemoTask
+description_for_agent: 创建一个演示任务（AI 可提交，进入待审中心等人批准）
+target_object: DemoTask
+autonomy_level: 2
+requires_staging: true
+params_schema:
+  type: object
+  properties:
+    title: {type: string, description: 任务标题}
+    priority: {type: integer, description: 优先级 1-5}
+  required: [title]
+transform:
+  - create_object:
+      type: DemoTask
+    with:
+      title: "from:params.title"
+      status: "literal:todo"
+      priority: "from:params.priority"

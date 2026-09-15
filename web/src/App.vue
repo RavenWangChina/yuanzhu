@@ -14,10 +14,12 @@
     <main class="main">
       <router-view />
     </main>
+    <Welcome />
   </div>
 </template>
 
 <script setup lang="ts">
 // 导航激活态样式见 style.css（.nav-item.router-link-active）
+import Welcome from './components/Welcome.vue'
 </script>
 

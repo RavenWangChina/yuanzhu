@@ -403,6 +403,17 @@ async def run_workflow(req: WorkflowRunRequest, db: AsyncSession = Depends(get_d
         raise HTTPException(status_code=400, detail=str(e))
 
 
+# ---------- 首启检测（v0.2.0 First 5 Minutes） ----------
+
+@router.get("/first-run")
+async def first_run(db: AsyncSession = Depends(get_db)):
+    """库空判定（对象数 0 = 新用户）——前端据此弹引导层"""
+    from sqlalchemy import func as sa_func, select as sa_select
+    from yuanzhu.db.models import Object
+    n = (await db.execute(sa_select(sa_func.count(Object.id)))).scalar() or 0
+    return {"first_run": n == 0}
+
+
 # ---------- 自举开关（v0.1.6） ----------
 
 @router.get("/bootstrap/status")

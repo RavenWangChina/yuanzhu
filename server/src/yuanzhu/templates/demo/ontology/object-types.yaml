@@ -1,0 +1,10 @@
+# 演示域对象模型（v0.2.0 First 5 Minutes）
+types:
+  - name: DemoTask
+    title_key: title
+    description: 演示任务（体验 staged writes：AI 提交 → 人批准入库）
+    exposed: true
+    properties:
+      title: {type: string, required: true}
+      status: {type: string, enum: [todo, doing, done], default: todo}
+      priority: {type: integer}

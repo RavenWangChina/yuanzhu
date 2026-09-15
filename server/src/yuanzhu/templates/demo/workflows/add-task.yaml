@@ -1,0 +1,9 @@
+name: add-task
+description: 添加演示任务（体验 staged writes 全流程）
+steps:
+  - id: submit
+    type: action_step
+    action: CreateDemoTask
+    params:
+      title: "$params.title"
+      priority: "$params.priority"
