@@ -3,5 +3,3 @@ __pycache__/
 .pytest_cache/
 # 私有备忘不入库
 docs/handoff-social-growth.md
-docs/zhihu-*
-docs/launch-posts.md

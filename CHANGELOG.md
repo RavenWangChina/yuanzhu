@@ -2,6 +2,45 @@
 
 本项目所有显著变更记录于此。格式参照 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，版本遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [0.2.1] · 2026-09-15（MCP 工具注解）
+
+### Fixed（M8ven 审计发现，173 测试全绿）
+- **MCP 工具四 hint 注解**：全部 35 个工具声明 `readOnlyHint`/`destructiveHint`/`idempotentHint`/`openWorldHint` 显式布尔——OpenAI 目录硬性要求（缺失拒收），M8ven 信任分计入项
+- 注解语义：查询类只读幂等；执行类非只读非破坏（staged 可 revert）；审批类幂等（乐观锁防重复执行）
+
+## [0.2.0] · 2026-09-15（First 5 Minutes）
+
+### Added（从安装到 aha 的 5 分钟路径，169 测试全绿）
+- **litellm 可选化**：OpenAI 兼容端点走内置 httpx 直连层（零额外依赖秒装）；多协议模型才需 `pip install yuanzhu[gateway]`——外部实测"安装卡死"收官
+- **`yuanzhu-demo` 一键体验**：起服务+灌演示数据+开浏览器，新用户 30 秒看到 staged writes 工作（干净环境实测 14 秒就绪）
+- **首启引导层**：`GET /api/first-run` 库空检测 + Web 三步 checklist（审 AI 提议/问问题/铸工作流）
+- **演示域**：demo 域四段式模板（DemoTask + L2 staged 动作）+ 种子数据
+- **Claude Code 插件**：`.claude-plugin` 市场（标准 MCP Streamable HTTP 端点重写）+ dsh 插件（npm `dsh-plugin-yuanzhu`）
+
+## [0.1.11] · 2026-09-14（MCP Registry 收录）
+
+### Fixed
+- `mcp-name` 所有权标记落到正确文件（server/README.md）——**正式收录进 MCP 官方 Registry**（`io.github.RavenWangChina/yuanzhu`）
+
+## [0.1.10] · 2026-09-14（Registry 基建）
+
+### Added
+- **stdio 桥**（`yuanzhu-mcp` 命令）：ndjson 透传本地 /mcp 端点——Registry 的 PyPI 包约定传输
+- `server.json` + README 验证标记初版
+
+## [0.1.9] · 2026-09-14（外部实测反馈收官）
+
+### Fixed（161 测试全绿）
+- **模型名参数化**：forge 生成的模板不再硬编码 glm-5.1——自动用环境可用模型替换
+- **evals 守门加强**：每工作流自动注入冒烟用例（真跑数据流：参数传递/步骤衔接/动作落库）——此前只测 staged-write 机制，数据流断裂模板照样通过
+- draft 模板可评测（工作流引擎 allow_draft）
+
+## [0.1.8] · 2026-09-14（外部实测紧急修复）
+
+### Fixed
+- forge prompt 补 `$` 前缀警告 + dry-run 检测裸 output 名（参数插值 bug 提前拦截）
+- README 澄清 `yuanzhu-server` 是命令不是独立包
+
 ## [0.1.7] · 2026-09-14（使用闭环）
 
 ### Added（完善使用闭环，160 测试全绿）
