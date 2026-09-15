@@ -6,14 +6,14 @@
 [![License](https://img.shields.io/badge/license-AGPL--3.0-blue)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.11%2B-3776ab)](https://pypi.org/project/yuanzhu/)
 [![MCP Registry](https://img.shields.io/badge/MCP%20Registry-listed-6bc47a)](https://registry.modelcontextprotocol.io)
-[![Tests](https://img.shields.io/badge/tests-173%20passed-brightgreen)](server/tests)
+[![Tests](https://img.shields.io/badge/tests-176%20passed-brightgreen)](server/tests)
 [![M8ven Score](https://m8ven.ai/badge/mcp/ravenwangchina-yuanzhu-3sw9ut?v=a35af7b82fada681394d13da08a151e6)](https://m8ven.ai/mcp/ravenwangchina-yuanzhu-3sw9ut)
 
 ![demo](docs/demo.gif)
 
 **按企业自身的工作习惯，把各领域的最佳实践定向复刻成 AI 工作流资产——像软件一样被开发、分发、使用、沉淀、进化，全员开箱即用。**
 
-## 当前状态：v0.2.1 已上架 [PyPI](https://pypi.org/project/yuanzhu/)（技术验证期）
+## 当前状态：v0.2.2 已上架 [PyPI](https://pypi.org/project/yuanzhu/)（技术验证期）
 
 **160 测试全绿**。装完即用的三层能力：
 

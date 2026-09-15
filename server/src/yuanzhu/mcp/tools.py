@@ -22,6 +22,23 @@ _HINTS_REVIEW = {"readOnlyHint": False, "destructiveHint": False,
                  "idempotentHint": True, "openWorldHint": False}
 
 
+TEMPLATE_TOOL: List[Dict[str, Any]] = [
+    {
+        "name": "templates_list",
+        "description": "列出已安装的工作流模板（四段式：对象模型+动作库+工作流+评测集）。"
+                       "看有什么现成能力、或确认 forge 产物是否上架，先查这里。",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "domain": {"type": "string", "description": "按域过滤（如 aiqa/metaflow/demo），省略列全部"},
+                "status": {"type": "string", "description": "按状态过滤（published/draft），省略列全部"},
+            },
+        },
+        "annotations": dict(_HINTS_READ),
+    },
+]
+
+
 APPROVAL_TOOLS: List[Dict[str, Any]] = [
     {
         "name": "list_pending_approvals",
@@ -113,5 +130,6 @@ class MCPToolGenerator:
             if tool:
                 tools.append(tool)
 
+        tools.extend(TEMPLATE_TOOL)
         tools.extend(APPROVAL_TOOLS)
         return tools

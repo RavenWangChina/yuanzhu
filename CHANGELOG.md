@@ -2,6 +2,11 @@
 
 本项目所有显著变更记录于此。格式参照 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，版本遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [0.2.2] · 2026-09-15（模板查询工具）
+
+### Added（真实使用反馈：纯 MCP 会话查模板要绕插件源码，176 测试全绿）
+- **`templates_list` MCP 工具**：列已安装模板（domain/status 过滤，返回名称+描述+状态+工作流数）——Template 是独立 ORM 模型不在本体层 ObjectType 体系，query_* 家族天然够不着，补此专用查询工具
+
 ## [0.2.1] · 2026-09-15（MCP 工具注解）
 
 ### Fixed（M8ven 审计发现，173 测试全绿）

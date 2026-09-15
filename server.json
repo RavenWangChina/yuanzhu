@@ -3,12 +3,12 @@
   "name": "io.github.RavenWangChina/yuanzhu",
   "title": "元铸工坊 SOSOFAST (yuanzhu)",
   "description": "Governed AI workflow assets: staged writes, evals-gated template forging, ontology via MCP.",
-  "version": "0.2.0",
+  "version": "0.2.2",
   "packages": [
     {
       "registryType": "pypi",
       "identifier": "yuanzhu",
-      "version": "0.2.0",
+      "version": "0.2.2",
       "transport": {
         "type": "stdio"
       }

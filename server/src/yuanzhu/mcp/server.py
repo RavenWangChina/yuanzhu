@@ -78,6 +78,8 @@ async def handle_mcp(request: Request, db: AsyncSession = Depends(get_db)):
             result = await handlers.handle_query(tool_name, arguments)
         elif tool_name.startswith("execute_"):
             result = await handlers.handle_execute(tool_name, arguments, agent_id)
+        elif tool_name == "templates_list":
+            result = await handlers.handle_templates_list(arguments)
         elif tool_name == "list_pending_approvals":
             result = await handlers.handle_list_pending(arguments)
         elif tool_name == "approve_action":

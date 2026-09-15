@@ -128,3 +128,20 @@ class MCPHandlers:
             return {"exec_id": exec.id, "status": exec.status, "message": "已拒绝"}
         except ValueError as e:
             return {"error": str(e)}
+
+
+    async def handle_templates_list(self, arguments: dict) -> dict:
+        """模板清单（真实使用反馈：纯 MCP 会话查模板不该绕路）"""
+        from sqlalchemy import select as _sel
+        from yuanzhu.db.models import Template
+        q = _sel(Template)
+        if arguments.get("domain"):
+            q = q.where(Template.domain == arguments["domain"])
+        if arguments.get("status"):
+            q = q.where(Template.status == arguments["status"])
+        rows = (await self.session.execute(q.order_by(Template.domain))).scalars().all()
+        return {"templates": [
+            {"name": t.name, "domain": t.domain, "status": t.status,
+             "description": (t.manifest_json or {}).get("description", ""),
+             "workflow_count": len(t.workflows_json or [])}
+            for t in rows]}
