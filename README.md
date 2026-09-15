@@ -7,6 +7,7 @@
 [![Python](https://img.shields.io/badge/python-3.11%2B-3776ab)](https://pypi.org/project/yuanzhu/)
 [![MCP Registry](https://img.shields.io/badge/MCP%20Registry-listed-6bc47a)](https://registry.modelcontextprotocol.io)
 [![Tests](https://img.shields.io/badge/tests-161%20passed-brightgreen)](server/tests)
+[![M8ven Score](https://m8ven.ai/badge/mcp/ravenwangchina-yuanzhu-3sw9ut?v=a35af7b82fada681394d13da08a151e6)](https://m8ven.ai/mcp/ravenwangchina-yuanzhu-3sw9ut)
 
 ![demo](docs/demo.gif)
 
