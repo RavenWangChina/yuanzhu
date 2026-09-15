@@ -63,6 +63,22 @@ claude plugin install yuanzhu@yuanzhu
 远程服务或带 token 场景用环境变量覆盖：`YUANZHU_MCP_URL` / `YUANZHU_TOKEN`。
 任意 MCP 客户端也可直连 `http://127.0.0.1:8600/mcp`（标准 MCP Streamable HTTP）。
 
+
+## What is yuanzhu (English)
+
+**Meta-Forge Workshop** — an open-source governance layer that turns your team's recurring AI work into versioned, testable workflow assets.
+
+- **MCP server**: the ontology layer (typed objects, links, governed actions) speaks standard MCP Streamable HTTP — works with Claude Code, any MCP client
+- **Staged writes**: every AI write action goes to a review queue. L1 auto-applies, L2 waits for human approval. Approvals never leak back to the agent
+- **One-sentence forging**: describe a routine task → AI generates a 4-part template (object model + actions + workflow + evals) → three quality gates before it ships
+- **Inference engine**: cross-analyzes behavior logs, knowledge and templates (three-memory architecture) to proactively suggest workflows
+- **Claude Code plugin** and **dsh plugin** included
+
+Install: `pip install yuanzhu` · [PyPI](https://pypi.org/project/yuanzhu/) · [MCP Registry](https://registry.modelcontextprotocol.io) `io.github.RavenWangChina/yuanzhu`
+
+Keywords: MCP server, Claude Code plugin, AI workflow governance, staged writes, human-in-the-loop, agent approval, workflow automation, enterprise AI.
+
+
 ## 文档导航
 
 | 文档 | 内容 |
