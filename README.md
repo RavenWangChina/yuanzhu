@@ -2,6 +2,14 @@
 
 > 对外传播名 **SOSOFAST（元铸工坊）** · 技术生态名 **yuanzhu** · © MiaoYu
 
+[![PyPI](https://img.shields.io/pypi/v/yuanzhu?label=PyPI)](https://pypi.org/project/yuanzhu/)
+[![License](https://img.shields.io/badge/license-AGPL--3.0-blue)](LICENSE)
+[![Python](https://img.shields.io/badge/python-3.11%2B-3776ab)](https://pypi.org/project/yuanzhu/)
+[![MCP Registry](https://img.shields.io/badge/MCP%20Registry-listed-6bc47a)](https://registry.modelcontextprotocol.io)
+[![Tests](https://img.shields.io/badge/tests-161%20passed-brightgreen)](server/tests)
+
+![demo](docs/demo.gif)
+
 **按企业自身的工作习惯，把各领域的最佳实践定向复刻成 AI 工作流资产——像软件一样被开发、分发、使用、沉淀、进化，全员开箱即用。**
 
 ## 当前状态：v0.1.9 已上架 [PyPI](https://pypi.org/project/yuanzhu/)（技术验证期）
