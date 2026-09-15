@@ -11,11 +11,23 @@ from typing import List, Dict, Any, Optional
 from yuanzhu.db.models import ObjectType, ActionType
 
 
+# v0.2.1 MCP 工具注解（M8ven 审计：四 hint 缺失会被 OpenAI 目录拒收）
+# openWorldHint 全 false（工具只访问工坊内部本体层，不触外部实体）
+_HINTS_READ = {"readOnlyHint": True, "destructiveHint": False,
+               "idempotentHint": True, "openWorldHint": False}
+_HINTS_WRITE = {"readOnlyHint": False, "destructiveHint": False,
+                "idempotentHint": False, "openWorldHint": False}
+# approve/reject 幂等（乐观锁防重复执行/终态重入无害）
+_HINTS_REVIEW = {"readOnlyHint": False, "destructiveHint": False,
+                 "idempotentHint": True, "openWorldHint": False}
+
+
 APPROVAL_TOOLS: List[Dict[str, Any]] = [
     {
         "name": "list_pending_approvals",
         "description": "列出待审批的 staged 动作（含参数、暂存者、before 快照）",
         "inputSchema": {"type": "object", "properties": {}},
+        "annotations": dict(_HINTS_READ),
     },
     {
         "name": "approve_action",
@@ -28,6 +40,7 @@ APPROVAL_TOOLS: List[Dict[str, Any]] = [
             },
             "required": ["exec_id"],
         },
+        "annotations": dict(_HINTS_REVIEW),
     },
     {
         "name": "reject_action",
@@ -40,6 +53,7 @@ APPROVAL_TOOLS: List[Dict[str, Any]] = [
             },
             "required": ["exec_id", "comment"],
         },
+        "annotations": dict(_HINTS_REVIEW),
     },
 ]
 
@@ -55,6 +69,7 @@ class MCPToolGenerator:
         return {
             "name": f"query_{obj_type.domain}_{obj_type.name}".lower(),
             "description": f"查询 {obj_type.name} 对象。{obj_type.description or ''}".strip(),
+            "annotations": dict(_HINTS_READ),
             "inputSchema": {
                 "type": "object",
                 "properties": {
@@ -78,6 +93,7 @@ class MCPToolGenerator:
             "name": f"execute_{action_type.domain}_{action_type.name}".lower(),
             "description": description,
             "inputSchema": action_type.params_schema_json or {"type": "object"},
+            "annotations": dict(_HINTS_WRITE),
         }
 
     async def list_tools(self) -> List[Dict[str, Any]]:
